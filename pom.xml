@@ -1,11 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.tescan.q-phase</groupId>
-  <artifactId>cdfreader</artifactId>
+  <groupId>com.tescan.qphase</groupId>
+  <artifactId>CDF_Reader</artifactId>
   <version>0.0.1-SNAPSHOT</version>
   <packaging>war</packaging>
-  <name>cdfreader</name>
-  <description>imagej plugin for reading NASA CDF files</description>
+  <name>CDF Reader</name>
+  <description>Imagej plugin for TESCAN Q-PHASE CDF (NASA) reader plugin</description>
   <dependencies>
   	<dependency>
   		<groupId>net.imagej</groupId>
@@ -13,4 +13,8 @@
   		<version>1.51j</version>
   	</dependency>
   </dependencies>
+  <organization>
+  	<name>TESCAN</name>
+  	<url>tescan.com</url>
+  </organization>
 </project>

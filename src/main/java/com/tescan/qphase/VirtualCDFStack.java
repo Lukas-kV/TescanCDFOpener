@@ -1,3 +1,4 @@
+package com.tescan.qphase;
 
 /**
 This class represents an array of disk-resident images.

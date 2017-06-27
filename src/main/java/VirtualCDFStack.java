@@ -23,7 +23,7 @@ class VirtualCDFStack extends ImageStack
 	 * @throws CDFException */
 	public VirtualCDFStack(Variable _var) throws CDFException 
 	{		
-		super((int)_var.getDimSizes()[0], (int)_var.getDimSizes()[1]);
+		super((int)_var.getDimSizes()[1], (int)_var.getDimSizes()[0]);
 		var = _var;
 		
 		nSlices = (int) var.getNumWrittenRecords();
@@ -145,7 +145,7 @@ class VirtualCDFStack extends ImageStack
 						
 			for(int i = 0; i < pixels; ++i)
 			{				
-				b[i] = (byte) ((short[])data)[i]; 
+				b[i] = (byte) (255 * ((short[])data)[i]); 
 			}
 			
 			return new ByteProcessor(getWidth(), getHeight(), (byte[]) b);

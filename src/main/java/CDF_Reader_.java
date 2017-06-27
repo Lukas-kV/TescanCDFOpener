@@ -5,6 +5,7 @@ import ij.gui.GenericDialog;
 import ij.io.OpenDialog;
 import ij.plugin.PlugIn;
 
+import java.awt.Font;
 import java.util.Vector;
 
 // NASA CDF dependencies 
@@ -71,7 +72,8 @@ public class CDF_Reader_ implements PlugIn {
 		 	return "Unknown Type";
 	 }
 	 
-	public void run(String paramString) {
+	public void run(String paramString) 
+	{
 		OpenDialog localOpenDialog = new OpenDialog("Open CDF...", paramString);
 		String str1 = localOpenDialog.getDirectory();
 		String str2 = localOpenDialog.getFileName();
@@ -84,28 +86,51 @@ public class CDF_Reader_ implements PlugIn {
 //		PrintStream localPrintStream = System.out;
 
 		CDF localNetcdfFile = null;
-		try {
+		try 
+		{
 			localNetcdfFile = CDF.open(str1 + str2);
-			Vector localList = localNetcdfFile.getVariables();
+			Vector varList = localNetcdfFile.getVariables();
+			Vector<Variable> images = new Vector<Variable>();
+			Vector<Variable> meta = new Vector<Variable>();
+			
 
 			GenericDialog localGenericDialog = new GenericDialog("Variable Name Selection");
-			localGenericDialog.addMessage("Please select variables to be loaded.\n");
+			localGenericDialog.addMessage("Please select variables to be loaded.\n", new Font ("Hevletica", Font.BOLD , 14));
 
-			if (localList.size() < 1) {
+			if (varList.size() < 1) {
 				IJ.error("The file did not contain variables. (broken?)");
 				localNetcdfFile.close();
 				return;
 			}
 			
-			if (localList.size() < 2) {
+			if (varList.size() < 2) 
+			{
 				localGenericDialog.addCheckbox("single variable", true);
-			} else {
-				for (int i = 0; i < localList.size(); ++i) {
-					Variable var = (Variable) localList.get(i);
+			}
+			else 
+			{				
+				for (int i = 0; i < varList.size(); ++i)
+				{					
+					Variable var = (Variable) varList.get(i);
 					long j = var.getNumDims();
 					long[] dimesions = var.getDimSizes();
 					
-					String name = j + "D: " + var.getName() + "              " + VarType(var.getDataType()) + " (";					
+					if(j == 2 && dimesions[0] > 10 && dimesions[1] > 10)
+						images.add(var);
+					else
+						meta.add(var);
+				}
+				
+				if(images.size() > 0)
+					localGenericDialog.addMessage("Image data:", new Font ("Hevletica", Font.BOLD , 12));
+				
+				for (int i = 0; i < images.size(); ++i) 
+				{
+					Variable var = (Variable) images.get(i);
+					long j = var.getNumDims();
+					long[] dimesions = var.getDimSizes();
+					
+					String name = var.getName() + "              " + VarType(var.getDataType()) + " (";					
 					for (int k = 0; k < j; ++k) {
 						if (k != 0)
 							name += "x";
@@ -115,10 +140,40 @@ public class CDF_Reader_ implements PlugIn {
 
 					long rec = var.getNumWrittenRecords();				
 					if(rec > 1)
-						name += "records " + rec;
+						name += rec + " records";
 
 					localGenericDialog.addCheckbox(name, false);
 				}
+				
+				
+				String name = "";
+				for (int i = 0; i < meta.size(); ++i) 
+				{
+					Variable var = (Variable) meta.get(i);
+					long j = var.getNumDims();
+					long[] dimesions = var.getDimSizes();
+					
+					name += "    " + var.getName() + "              " + VarType(var.getDataType()) + " (";					
+					for (int k = 0; k < j; ++k) {
+						if (k != 0)
+							name += "x";
+							name += dimesions[k];
+					}
+					name += ") ";
+
+					long rec = var.getNumWrittenRecords();				
+					if(rec > 1)
+						name += rec + " records";
+					
+					name += "\n";					
+				}
+
+				if(meta.size() > 0)
+				{
+					localGenericDialog.addMessage("Meta data:", new Font ("Hevletica", Font.BOLD , 12));					
+					localGenericDialog.addMessage(name);
+				}
+				
 				localGenericDialog.showDialog();
 
 				if (localGenericDialog.wasCanceled()) {
@@ -127,25 +182,20 @@ public class CDF_Reader_ implements PlugIn {
 				}
 			}
 
-			for (int i = 0; i < localList.size(); ++i) 
+			for (int i = 0; i < images.size(); ++i) 
 			{
 				
 				if (!(localGenericDialog.getNextBoolean()))
 					continue;
 				
-				Variable var = (Variable) localList.get(i);				
+				Variable var = (Variable) images.get(i);				
 				
 				VirtualCDFStack stack = new VirtualCDFStack(var);
 				
 				if (stack != null && stack.getSize() > 0) 
-				{
-					//double min = Double.MAX_VALUE;
-					//double max = -Double.MAX_VALUE;
-					
+				{					
 					ImagePlus imp2 = new ImagePlus(var.getName(), stack);
-					//if (imp2.getType() == ImagePlus.GRAY16 || imp2.getType() == ImagePlus.GRAY32)
-						//imp2.getProcessor().setMinAndMax(min, max);
-					
+
 //					if (imp2.getStackSize() == 1 && info1!=null)
 //						imp2.setProperty("Info", info1);
 					

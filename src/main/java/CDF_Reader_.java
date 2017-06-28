@@ -14,9 +14,11 @@ import gsfc.nssdc.cdf.CDFConstants;
 import gsfc.nssdc.cdf.CDFException;
 import gsfc.nssdc.cdf.Variable;
 
-public class CDF_Reader_ implements PlugIn {
+public class CDF_Reader_ implements PlugIn 
+{
 	
-	public static String VarType(long dataType) {
+	public static String VarType(long dataType) 
+	{
 	        
 		 	if(dataType == CDFConstants.CDF_BYTE) //java.lang.Byte
 		 		return "CDF_BYTE (Byte)";
@@ -70,8 +72,8 @@ public class CDF_Reader_ implements PlugIn {
 		 		return "CDF_UCHAR (String)";
 		 	
 		 	return "Unknown Type";
-	 }
-	 
+	}
+		 
 	public void run(String paramString) 
 	{
 		OpenDialog localOpenDialog = new OpenDialog("Open CDF...", paramString);
@@ -85,11 +87,11 @@ public class CDF_Reader_ implements PlugIn {
 
 //		PrintStream localPrintStream = System.out;
 
-		CDF localNetcdfFile = null;
+		CDF cdfFile = null;
 		try 
 		{
-			localNetcdfFile = CDF.open(str1 + str2);
-			Vector varList = localNetcdfFile.getVariables();
+			cdfFile = CDF.open(str1 + str2);
+			Vector<Variable> varList = cdfFile.getVariables();
 			Vector<Variable> images = new Vector<Variable>();
 			Vector<Variable> meta = new Vector<Variable>();
 			
@@ -99,7 +101,7 @@ public class CDF_Reader_ implements PlugIn {
 
 			if (varList.size() < 1) {
 				IJ.error("The file did not contain variables. (broken?)");
-				localNetcdfFile.close();
+				cdfFile.close();
 				return;
 			}
 			
@@ -188,9 +190,9 @@ public class CDF_Reader_ implements PlugIn {
 				if (!(localGenericDialog.getNextBoolean()))
 					continue;
 				
-				Variable var = (Variable) images.get(i);				
+				Variable var = (Variable) images.get(i);			
 				
-				VirtualCDFStack stack = new VirtualCDFStack(var);
+				VirtualCDFStack stack = new VirtualCDFStack(var, new MetaData(var, meta));
 				
 				if (stack != null && stack.getSize() > 0) 
 				{					
@@ -214,8 +216,8 @@ public class CDF_Reader_ implements PlugIn {
 		}
 
 //		try {
-//			if (localNetcdfFile != null)
-//				localNetcdfFile.close();
+//			if (cdfFile != null)
+//				cdfFile.close();
 //		} catch ( CDFException localIOException2) {
 //			System.err.println("Error while closing '" + str1 + str2 + "'");
 //			System.err.println(localIOException2);
@@ -224,6 +226,8 @@ public class CDF_Reader_ implements PlugIn {
 
 		IJ.showProgress(1.0D);
 	}
+	
+	
 }
 
 

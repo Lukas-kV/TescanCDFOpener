@@ -18,15 +18,17 @@ class VirtualCDFStack extends ImageStack
 	int nSlices;
 	int used[];
 	Variable var;
+	MetaData meta;
 	
 	/** Creates a new, empty virtual stack. 
 	 * @throws CDFException */
-	public VirtualCDFStack(Variable _var) throws CDFException 
+	public VirtualCDFStack(Variable _var, MetaData _meta) throws CDFException 
 	{		
 		super((int)_var.getDimSizes()[1], (int)_var.getDimSizes()[0]);
 		var = _var;
+		meta  = _meta;
 		
-		nSlices = (int) var.getNumWrittenRecords();
+		nSlices = (int) meta.getTimeSlots();
 				
 		used = new int[nSlices];
 		for(int i = 0; i < nSlices; ++i)
@@ -106,7 +108,7 @@ class VirtualCDFStack extends ImageStack
 		Object data;
 		try 
 		{
-			data = var.getRecordObject(used[n]).getRawData();
+			data = var.getRecordObject(meta.getRecordIndex(used[n])).getRawData();
 		} 
 		catch (CDFException e) 
 		{
@@ -163,7 +165,21 @@ class VirtualCDFStack extends ImageStack
 	/** Returns the file name of the Nth image. */
 	public String getSliceLabel(int n) 
 	{
-		 return "slice " + (n - 1);
+		n--;
+		
+		String result = "";
+		
+		int r = meta.getRecordIndex(n);
+		
+		double[] pos = meta.get3DPositions(r);
+		if(pos != null)
+			result += String.format("x: %g, y: %g, z: %g  mm ", pos[0], pos[1], pos[2]);
+		
+		String time = meta.getTime(r);
+		if(time != null)
+			result += time;
+				
+		return result;
 	}
 	
 	/** Returns null. */

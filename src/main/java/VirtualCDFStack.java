@@ -6,6 +6,8 @@ import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 
+import java.util.Vector;
+
 import gsfc.nssdc.cdf.CDFConstants;
 import gsfc.nssdc.cdf.CDFException;
 import gsfc.nssdc.cdf.Variable;
@@ -16,25 +18,19 @@ This class represents an array of disk-resident images.
 class VirtualCDFStack extends ImageStack
 {
 	int nSlices;
-	int used[];
-	Variable var;
-	MetaData meta;
+	Vector<MetaData> meta;
+	int xyIndex;
 	
 	/** Creates a new, empty virtual stack. 
 	 * @throws CDFException */
-	public VirtualCDFStack(Variable _var, MetaData _meta) throws CDFException 
-	{		
-		super((int)_var.getDimSizes()[1], (int)_var.getDimSizes()[0]);
-		var = _var;
+	public VirtualCDFStack(int width, int height, Vector<MetaData> _meta, int _xyIndex) throws CDFException 
+	{
+		super(width, height);
+		xyIndex = _xyIndex;
 		meta  = _meta;
+		nSlices = (int) meta.firstElement().getTimeSlots() * meta.firstElement().getZCount() * meta.size();
 		
-		nSlices = (int) meta.getTimeSlots();
-				
-		used = new int[nSlices];
-		for(int i = 0; i < nSlices; ++i)
-			used[i] = i;
-		
-		IJ.showStatus("VirtualCdfStack " + nSlices);
+		IJ.showStatus("VirtualCDFStack " + nSlices);
 	}
 
 	/** Does nothing. */
@@ -60,15 +56,15 @@ class VirtualCDFStack extends ImageStack
 	/** Deletes the specified slice, were 1<=n<=nslices. */
 	public void deleteSlice(int n) 
 	{
-		if (n < 1 || n > nSlices)
-			throw new IllegalArgumentException("Argument out of range: " + n);
-
-		if (nSlices < 1)
-			return;
-		
-		for (int i = n; i < nSlices; i++)
-			used[i - 1] = used[i];		
-		nSlices--;
+//		if (n < 1 || n > nSlices)
+//			throw new IllegalArgumentException("Argument out of range: " + n);
+//
+//		if (nSlices < 1)
+//			return;
+//		
+//		for (int i = n; i < nSlices; i++)
+//			used[i - 1] = used[i];		
+//		nSlices--;
 	}
 	
 	/** Deletes the last slice in the stack. */
@@ -99,16 +95,19 @@ class VirtualCDFStack extends ImageStack
 	*/
 	public ImageProcessor getProcessor(int n) 
 	{
-		n -= 1;
+		n--;
 		if(n < 0 || n >= nSlices)
-			return null;
+			return null;		
 		
+		int[] czt = getCZT(n);		
+		MetaData m = meta.elementAt(czt[0]);		
+		Variable var = m.getVar();		
 		long dataType = var.getDataType();			
 		
 		Object data;
 		try 
 		{
-			data = var.getRecordObject(meta.getRecordIndex(used[n])).getRawData();
+			data = var.getRecordObject(m.getRecordIndex(czt[2], xyIndex, czt[1])).getRawData();
 		} 
 		catch (CDFException e) 
 		{
@@ -169,16 +168,19 @@ class VirtualCDFStack extends ImageStack
 		
 		String result = "";
 		
-		int r = meta.getRecordIndex(n);
+		int[] czt = getCZT(n);		
+		MetaData m = meta.elementAt(czt[0]);		
+		int r = m.getRecordIndex(czt[2], xyIndex, czt[1]);
 		
-		double[] pos = meta.get3DPositions(r);
+		double[] pos = m.get3DPositions(r);
 		if(pos != null)
 			result += String.format("x: %g, y: %g, z: %g  mm ", pos[0], pos[1], pos[2]);
 		
-		String time = meta.getTime(r);
+		String time = m.getGlobalTime(czt[2], 0, 0);
 		if(time != null)
 			result += time;
 				
+		System.out.println(m.getMetaString(r));		
 		return result;
 	}
 	
@@ -202,6 +204,22 @@ class VirtualCDFStack extends ImageStack
    /** Does nothing. */
 	public void trim() 
 	{
+	}
+	
+	private int[] getCZT(int n)
+	{
+		int[] czt = new int[3];		
+		MetaData m = meta.firstElement();
+		
+		int segment = m.getZCount() * meta.size();		
+		czt[2] = n / segment; // T
+		
+		int subSegment = n % segment;
+		czt[1] = subSegment / meta.size(); // Z
+
+		czt[0] = subSegment % meta.size(); // C
+		
+		return czt;		
 	}
 		
 }

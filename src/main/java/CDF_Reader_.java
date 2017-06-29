@@ -1,6 +1,8 @@
 /** <a href="http://www.cpupk.com/decompiler">Eclipse Class Decompiler</a> plugin, Copyright (c) 2017 Chen Chao. **/
+import ij.CompositeImage;
 import ij.IJ;
 import ij.ImagePlus;
+import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.io.OpenDialog;
 import ij.plugin.PlugIn;
@@ -184,26 +186,65 @@ public class CDF_Reader_ implements PlugIn
 				}
 			}
 
+			Vector<MetaData> m = new Vector<MetaData>();
+			int width = 0, height = 0;
+			
 			for (int i = 0; i < images.size(); ++i) 
 			{
 				
 				if (!(localGenericDialog.getNextBoolean()))
 					continue;
 				
-				Variable var = (Variable) images.get(i);			
+				Variable var = (Variable) images.get(i);
 				
-				VirtualCDFStack stack = new VirtualCDFStack(var, new MetaData(var, meta));
-				
-				if (stack != null && stack.getSize() > 0) 
-				{					
-					ImagePlus imp2 = new ImagePlus(var.getName(), stack);
-
-//					if (imp2.getStackSize() == 1 && info1!=null)
-//						imp2.setProperty("Info", info1);
-					
-					imp2.show();
-				}					
+				if(m.size() == 0)
+				{
+					width = (int)var.getDimSizes()[1]; 
+					height = (int)var.getDimSizes()[0];
+					m.add(new MetaData(var, meta));
+				}
+				else
+				{
+					if(width == (int)var.getDimSizes()[1] || height == (int)var.getDimSizes()[0])
+					{
+						m.add(new MetaData(var, meta));
+					}
+					else
+					{
+						IJ.error("Channel " + var.getName() + String.format(" (%dx%d)", (int)var.getDimSizes()[1], (int)var.getDimSizes()[0])
+						+ " varies in size from first read channel " + m.firstElement().getVar().getName() + String.format(" (%dx%d)", width, height) + 
+						"it is going to be skipped");
+					}
+				}
 			}
+			
+			VirtualCDFStack stack = new VirtualCDFStack(width, height, m, 0);
+			if (stack != null && stack.getSize() > 0) 
+			{					
+				ImagePlus imp = new ImagePlus("Q-PHASE", stack);
+				imp.setDimensions(m.size(), m.firstElement().getZCount(), m.firstElement().getTimeSlots());
+												
+				System.out.println("dimensions " + imp.getNDimensions() + " stack size " + imp.getStackSize()
+						 + String.format(" HS dims C=%d Z=%d T=%d", m.size(), m.firstElement().getZCount(), m.firstElement().getTimeSlots()));
+
+				ImagePlus imp2 = imp;
+				
+				 if (m.size() > 1 && imp.getBitDepth() != 24) 
+				 {
+	                imp2 = new CompositeImage(imp, IJ.GRAYSCALE);
+		         }
+				 
+		         imp2.setOpenAsHyperStack(true);
+		         		         
+		         if (imp!=imp2) 
+		         {
+		        	 imp2.setOverlay(imp.getOverlay());
+		             imp.hide();
+		             imp2.show();
+		             WindowManager.setCurrentWindow(imp2.getWindow());
+		         }				
+			}					
+			
 			
 
 		} catch (CDFException e) {

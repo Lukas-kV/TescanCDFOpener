@@ -5,14 +5,18 @@ import gsfc.nssdc.cdf.Variable;
 
 public class MetaData 
 {
+	private Variable var;
 	private Variable time;
+	private Variable globalTimeSlots;
 	private Variable meta;
-	private Variable position;
+	private Variable position;	
 	private int xyCount, zCount, records, timeslots;
 	
 	
-	public MetaData(Variable var, Vector<Variable> metaList)
+	public MetaData(Variable _var, Vector<Variable> metaList)
 	{		
+		Variable posHologram = null, metaHologram = null;
+		var = _var;
 		for (int i = 0; i < metaList.size(); ++i)
 		{		
 			Variable v = metaList.get(i);
@@ -36,7 +40,29 @@ public class MetaData
 				}				
 				
 			}
+			
+			if(name.contains("timestamp"))
+				globalTimeSlots = v;
+			
+			if(name.contains("pos-Hologram"))
+				posHologram = v;
+
+			if(name.contains("meta-Hologram"))
+				metaHologram = v;			
 		}
+		
+		if(position == null)
+		{
+			position = posHologram;
+			System.out.println("using Hologram position for channel " + var.getName()); 
+		}
+		
+		if(meta == null)
+		{
+			meta = metaHologram;
+			System.out.println("using Hologram metaData for channel " + var.getName()); 
+		}
+		
 		
 		try 
 		{
@@ -76,6 +102,41 @@ public class MetaData
 		
 		System.out.println(var.getName() + " (xyCount=" + xyCount + "  zCount=" + zCount + " records=" + records + " timeslots=" + timeslots +")");
 	}
+	
+	public Variable getVar()
+	{
+		return var;
+	}
+	
+	public String getGlobalTime(int timeslot, int xyIndex, int zIndex) 
+	{
+		return getGlobalTime(getRecordIndex(timeslot, xyIndex, zIndex));
+	}
+	
+	public String getGlobalTime(long r)
+	{
+		String result = null;
+		
+		if(globalTimeSlots != null)
+		{
+			try 
+			{
+				result = ((String[]) globalTimeSlots.getRecordObject(r).getData())[0];
+			} 
+			catch (CDFException e) 
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
+		return result;		
+	}
+	
+	public String getTime(int timeslot, int xyIndex, int zIndex) 
+	{
+		return getTime(getRecordIndex(timeslot, xyIndex, zIndex));
+	}
 		
 	public String getTime(long r) 
 	{
@@ -97,6 +158,11 @@ public class MetaData
 		return result;
 	} 
 	
+	public String getMetaString(int timeslot, int xyIndex, int zIndex) 
+	{
+		return getMetaString(getRecordIndex(timeslot, xyIndex, zIndex));
+	}
+	
 	public String getMetaString(long r) 
 	{
 		String result = null;
@@ -116,6 +182,12 @@ public class MetaData
 		}
 		return result;
 	} 
+	
+
+	public double[] get3DPositions(int timeslot, int xyIndex, int zIndex) 
+	{
+		return get3DPositions(getRecordIndex(timeslot, xyIndex, zIndex));
+	}
 	
 	public double[] get3DPositions(long r) 
 	{
@@ -156,11 +228,6 @@ public class MetaData
 	public int getRecordIndex(int timeslot, int xyIndex, int zIndex)
 	{
 		return xyCount * zCount * timeslot + xyIndex * zCount + zIndex;
-	}
-
-	public int getRecordIndex(int timeslot)
-	{
-		return xyCount * zCount * timeslot;
 	}
 		
 }

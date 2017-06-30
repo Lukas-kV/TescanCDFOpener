@@ -1,7 +1,11 @@
 import java.util.Vector;
 
+import com.google.gson.Gson;
+
+import MetaStruct.MetaStruct;
 import gsfc.nssdc.cdf.CDFException;
 import gsfc.nssdc.cdf.Variable;
+import ij.measure.Calibration;
 
 public class MetaData 
 {
@@ -10,8 +14,7 @@ public class MetaData
 	private Variable globalTimeSlots;
 	private Variable meta;
 	private Variable position;	
-	private int xyCount, zCount, records, timeslots;
-	
+	private int xyCount, zCount, records, timeslots, width, height;	
 	
 	public MetaData(Variable _var, Vector<Variable> metaList)
 	{		
@@ -99,10 +102,12 @@ public class MetaData
 		
 		timeslots = records / (zCount * xyCount);
 		
+        width = (int) var.getDimSizes()[1];
+        height = (int) var.getDimSizes()[0];
 		
 		System.out.println(var.getName() + " (xyCount=" + xyCount + "  zCount=" + zCount + " records=" + records + " timeslots=" + timeslots +")");
 	}
-	
+
 	public Variable getVar()
 	{
 		return var;
@@ -183,7 +188,43 @@ public class MetaData
 		return result;
 	} 
 	
+	public MetaStruct getMetaStruct(int timeslot, int xyIndex, int zIndex)
+	{
+	    return getMetaStruct(getRecordIndex(timeslot, xyIndex, zIndex));
+	}
+	
+	public MetaStruct getMetaStruct(long r)
+	{
+	    String m = getMetaString(r);
+	    if(m != null)
+	    {
+	        Gson parser = new Gson();
+	        return parser.fromJson(m, MetaStruct.class);
+	    }
+	    return null;
+	}
+	
+    public Calibration getCalibration(long r)
+    {
+        MetaStruct m = getMetaStruct(r);
 
+        if (m != null)
+        {
+
+            Calibration c = new Calibration();
+            System.out.println("Calibration loaded from MetaStruc version" + m.metaVersion);
+
+            c.setUnit("um");
+            c.pixelWidth = m.objectives.fov.x / width;
+            c.pixelHeight = m.objectives.fov.y / height;
+
+            return c;
+        }
+
+        return null;
+    }
+	
+	
 	public double[] get3DPositions(int timeslot, int xyIndex, int zIndex) 
 	{
 		return get3DPositions(getRecordIndex(timeslot, xyIndex, zIndex));
@@ -210,6 +251,22 @@ public class MetaData
 		return result;
 	} 
 	
+    static int getXYCount(Variable var)
+    {
+        int c;        
+        try 
+        {
+            c = (Integer) var.getEntryData("xyCount");
+        } 
+        catch (CDFException e) 
+        {
+            // TODO Auto-generated catch block
+            //e.printStackTrace();
+            c = 1;
+        }        
+        return c;
+    }
+		
 	public int getXYCount()
 	{
 		return xyCount;

@@ -1,3 +1,4 @@
+
 /** <a href="http://www.cpupk.com/decompiler">Eclipse Class Decompiler</a> plugin, Copyright (c) 2017 Chen Chao. **/
 import ij.CompositeImage;
 import ij.IJ;
@@ -5,6 +6,7 @@ import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.GenericDialog;
 import ij.io.OpenDialog;
+import ij.measure.Calibration;
 import ij.plugin.PlugIn;
 
 import java.awt.Font;
@@ -16,260 +18,271 @@ import gsfc.nssdc.cdf.CDFConstants;
 import gsfc.nssdc.cdf.CDFException;
 import gsfc.nssdc.cdf.Variable;
 
-public class CDF_Reader_ implements PlugIn 
+public class CDF_Reader_ implements PlugIn
 {
-	
-	public static String VarType(long dataType) 
-	{
-	        
-		 	if(dataType == CDFConstants.CDF_BYTE) //java.lang.Byte
-		 		return "CDF_BYTE (Byte)";
-		 
-		 	if(dataType == CDFConstants.CDF_INT1) //java.lang.Byte
-		 		return "CDF_INT1 (Byte)";
-		 	
-		 	if(dataType == CDFConstants.CDF_UINT1) //java.lang.Short
-		 		return "CDF_UINT1 (Short)";
-		 	
-		 	if(dataType == CDFConstants.CDF_INT2) //java.lang.Short
-		 		return "CDF_INT2 (Short)";
-		 	
-		 	if(dataType == CDFConstants.CDF_UINT2) //java.lang.Integer
-		 		return "CDF_UINT2 (Integer)";
-		 	
-		 	if(dataType == CDFConstants.CDF_INT4) //java.lang.Integer
-		 		return "CDF_INT4 (Integer)";
-		 	
-		 	if(dataType == CDFConstants.CDF_UINT4) //java.lang.Long
-		 		return "CDF_UINT4 (Long)";
-		 	
-		 	if(dataType == CDFConstants.CDF_INT8) //java.lang.Long
-		 		return "CDF_INT8 (Long)";
-		 	
-		 	if(dataType == CDFConstants.CDF_FLOAT) //java.lang.Float
-		 		return "CDF_FLOAT (Float)";
-		 	
-		 	if(dataType == CDFConstants.CDF_REAL4)	//java.lang.Float
-		 		return "CDF_REAL4 (Float)";
-		 	
-		 	if(dataType == CDFConstants.CDF_DOUBLE) //java.lang.Double
-		 		return "CDF_DOUBLE (Double)";
-		 	
-		 	if(dataType == CDFConstants.CDF_REAL8) //java.lang.Double
-		 		return "CDF_REAL8 (Double)";
-		 	
-		 	if(dataType == CDFConstants.CDF_EPOCH) //java.lang.Double
-		 		return "CDF_EPOCH (Double)";
-		 	
-		 	if(dataType == CDFConstants.CDF_EPOCH16) //java.lang.Double
-		 		return "CDF_EPOCH16 (Double)";
-		 	
-		 	if(dataType == CDFConstants.CDF_TIME_TT2000) //java.lang.Long
-		 		return "CDF_TIME_TT2000 (Long)";
-		 	
-		 	if(dataType == CDFConstants.CDF_CHAR) //java.lang.String
-		 		return "CDF_CHAR (String)";
-		 	
-		 	if(dataType == CDFConstants.CDF_UCHAR) //java.lang.String		 	
-		 		return "CDF_UCHAR (String)";
-		 	
-		 	return "Unknown Type";
-	}
-		 
-	public void run(String paramString) 
-	{
-		OpenDialog localOpenDialog = new OpenDialog("Open CDF...", paramString);
-		String str1 = localOpenDialog.getDirectory();
-		String str2 = localOpenDialog.getFileName();
-		if (str2 == null)
-			return;
-		if (str2 == "")
-			return;
-		IJ.showStatus("Loading CDF File: " + str1 + str2);
 
-//		PrintStream localPrintStream = System.out;
+    public static String VarType(long dataType)
+    {
 
-		CDF cdfFile = null;
-		try 
-		{
-			cdfFile = CDF.open(str1 + str2);
-			Vector<Variable> varList = cdfFile.getVariables();
-			Vector<Variable> images = new Vector<Variable>();
-			Vector<Variable> meta = new Vector<Variable>();
-			
+        if (dataType == CDFConstants.CDF_BYTE) // java.lang.Byte
+            return "CDF_BYTE (Byte)";
 
-			GenericDialog localGenericDialog = new GenericDialog("Variable Name Selection");
-			localGenericDialog.addMessage("Please select variables to be loaded.\n", new Font ("Hevletica", Font.BOLD , 14));
+        if (dataType == CDFConstants.CDF_INT1) // java.lang.Byte
+            return "CDF_INT1 (Byte)";
 
-			if (varList.size() < 1) {
-				IJ.error("The file did not contain variables. (broken?)");
-				cdfFile.close();
-				return;
-			}
-			
-			if (varList.size() < 2) 
-			{
-				localGenericDialog.addCheckbox("single variable", true);
-			}
-			else 
-			{				
-				for (int i = 0; i < varList.size(); ++i)
-				{					
-					Variable var = (Variable) varList.get(i);
-					long j = var.getNumDims();
-					long[] dimesions = var.getDimSizes();
-					
-					if(j == 2 && dimesions[0] > 10 && dimesions[1] > 10)
-						images.add(var);
-					else
-						meta.add(var);
-				}
-				
-				if(images.size() > 0)
-					localGenericDialog.addMessage("Image data:", new Font ("Hevletica", Font.BOLD , 12));
-				
-				for (int i = 0; i < images.size(); ++i) 
-				{
-					Variable var = (Variable) images.get(i);
-					long j = var.getNumDims();
-					long[] dimesions = var.getDimSizes();
-					
-					String name = var.getName() + "              " + VarType(var.getDataType()) + " (";					
-					for (int k = 0; k < j; ++k) {
-						if (k != 0)
-							name += "x";
-							name += dimesions[k];
-					}
-					name += ") ";
+        if (dataType == CDFConstants.CDF_UINT1) // java.lang.Short
+            return "CDF_UINT1 (Short)";
 
-					long rec = var.getNumWrittenRecords();				
-					if(rec > 1)
-						name += rec + " records";
+        if (dataType == CDFConstants.CDF_INT2) // java.lang.Short
+            return "CDF_INT2 (Short)";
 
-					localGenericDialog.addCheckbox(name, false);
-				}
-				
-				
-				String name = "";
-				for (int i = 0; i < meta.size(); ++i) 
-				{
-					Variable var = (Variable) meta.get(i);
-					long j = var.getNumDims();
-					long[] dimesions = var.getDimSizes();
-					
-					name += "    " + var.getName() + "              " + VarType(var.getDataType()) + " (";					
-					for (int k = 0; k < j; ++k) {
-						if (k != 0)
-							name += "x";
-							name += dimesions[k];
-					}
-					name += ") ";
+        if (dataType == CDFConstants.CDF_UINT2) // java.lang.Integer
+            return "CDF_UINT2 (Integer)";
 
-					long rec = var.getNumWrittenRecords();				
-					if(rec > 1)
-						name += rec + " records";
-					
-					name += "\n";					
-				}
+        if (dataType == CDFConstants.CDF_INT4) // java.lang.Integer
+            return "CDF_INT4 (Integer)";
 
-				if(meta.size() > 0)
-				{
-					localGenericDialog.addMessage("Meta data:", new Font ("Hevletica", Font.BOLD , 12));					
-					localGenericDialog.addMessage(name);
-				}
-				
-				localGenericDialog.showDialog();
+        if (dataType == CDFConstants.CDF_UINT4) // java.lang.Long
+            return "CDF_UINT4 (Long)";
 
-				if (localGenericDialog.wasCanceled()) {
-					IJ.error("Plugin canceled!");
-					return;
-				}
-			}
+        if (dataType == CDFConstants.CDF_INT8) // java.lang.Long
+            return "CDF_INT8 (Long)";
 
-			Vector<MetaData> m = new Vector<MetaData>();
-			int width = 0, height = 0;
-			
-			for (int i = 0; i < images.size(); ++i) 
-			{
-				
-				if (!(localGenericDialog.getNextBoolean()))
-					continue;
-				
-				Variable var = (Variable) images.get(i);
-				
-				if(m.size() == 0)
-				{
-					width = (int)var.getDimSizes()[1]; 
-					height = (int)var.getDimSizes()[0];
-					m.add(new MetaData(var, meta));
-				}
-				else
-				{
-					if(width == (int)var.getDimSizes()[1] || height == (int)var.getDimSizes()[0])
-					{
-						m.add(new MetaData(var, meta));
-					}
-					else
-					{
-						IJ.error("Channel " + var.getName() + String.format(" (%dx%d)", (int)var.getDimSizes()[1], (int)var.getDimSizes()[0])
-						+ " varies in size from first read channel " + m.firstElement().getVar().getName() + String.format(" (%dx%d)", width, height) + 
-						"it is going to be skipped");
-					}
-				}
-			}
-			
-			VirtualCDFStack stack = new VirtualCDFStack(width, height, m, 0);
-			if (stack != null && stack.getSize() > 0) 
-			{					
-				ImagePlus imp = new ImagePlus("Q-PHASE", stack);
-				imp.setDimensions(m.size(), m.firstElement().getZCount(), m.firstElement().getTimeSlots());
-												
-				System.out.println("dimensions " + imp.getNDimensions() + " stack size " + imp.getStackSize()
-						 + String.format(" HS dims C=%d Z=%d T=%d", m.size(), m.firstElement().getZCount(), m.firstElement().getTimeSlots()));
+        if (dataType == CDFConstants.CDF_FLOAT) // java.lang.Float
+            return "CDF_FLOAT (Float)";
 
-				ImagePlus imp2 = imp;
-				
-				 if (m.size() > 1 && imp.getBitDepth() != 24) 
-				 {
-	                imp2 = new CompositeImage(imp, IJ.GRAYSCALE);
-		         }
-				 
-		         imp2.setOpenAsHyperStack(true);
-		         		         
-		         if (imp!=imp2) 
-		         {
-		        	 imp2.setOverlay(imp.getOverlay());
-		             imp.hide();
-		             imp2.show();
-		             WindowManager.setCurrentWindow(imp2.getWindow());
-		         }				
-			}					
-			
-			
+        if (dataType == CDFConstants.CDF_REAL4) // java.lang.Float
+            return "CDF_REAL4 (Float)";
 
-		} catch (CDFException e) {
-			// TODO Auto-generated catch block
-			System.err.println(e.toString());
-			e.printStackTrace();
-		}
-		catch (OutOfMemoryError localOutOfMemoryError) {
-			IJ.outOfMemory("Load CDF");
-		}
+        if (dataType == CDFConstants.CDF_DOUBLE) // java.lang.Double
+            return "CDF_DOUBLE (Double)";
 
-//		try {
-//			if (cdfFile != null)
-//				cdfFile.close();
-//		} catch ( CDFException localIOException2) {
-//			System.err.println("Error while closing '" + str1 + str2 + "'");
-//			System.err.println(localIOException2);
-//			IJ.showStatus("Error closing file.");
-//		}
+        if (dataType == CDFConstants.CDF_REAL8) // java.lang.Double
+            return "CDF_REAL8 (Double)";
 
-		IJ.showProgress(1.0D);
-	}
-	
-	
+        if (dataType == CDFConstants.CDF_EPOCH) // java.lang.Double
+            return "CDF_EPOCH (Double)";
+
+        if (dataType == CDFConstants.CDF_EPOCH16) // java.lang.Double
+            return "CDF_EPOCH16 (Double)";
+
+        if (dataType == CDFConstants.CDF_TIME_TT2000) // java.lang.Long
+            return "CDF_TIME_TT2000 (Long)";
+
+        if (dataType == CDFConstants.CDF_CHAR) // java.lang.String
+            return "CDF_CHAR (String)";
+
+        if (dataType == CDFConstants.CDF_UCHAR) // java.lang.String
+            return "CDF_UCHAR (String)";
+
+        return "Unknown Type";
+    }
+
+    public void run(String paramString)
+    {
+        OpenDialog localOpenDialog = new OpenDialog("Open CDF...", paramString);
+        String str1 = localOpenDialog.getDirectory();
+        String str2 = localOpenDialog.getFileName();
+        if (str2 == null)
+            return;
+        if (str2 == "")
+            return;
+        IJ.showStatus("Loading CDF File: " + str1 + str2);
+
+        // PrintStream localPrintStream = System.out;
+
+        CDF cdfFile = null;
+        try
+        {
+            cdfFile = CDF.open(str1 + str2);
+            Vector<Variable> varList = cdfFile.getVariables();
+            Vector<Variable> images = new Vector<Variable>();
+            Vector<Variable> meta = new Vector<Variable>();
+
+            GenericDialog localGenericDialog = new GenericDialog("Variable Name Selection");
+            localGenericDialog.addMessage("Please select variables to be loaded.\n",
+                    new Font("Hevletica", Font.BOLD, 14));
+
+            if (varList.size() < 1)
+            {
+                IJ.error("The file did not contain variables. (broken?)");
+                cdfFile.close();
+                return;
+            }
+
+            if (varList.size() < 2)
+            {
+                localGenericDialog.addCheckbox("single variable", true);
+            }
+            else
+            {
+                for (int i = 0; i < varList.size(); ++i)
+                {
+                    Variable var = (Variable) varList.get(i);
+                    long j = var.getNumDims();
+                    long[] dimesions = var.getDimSizes();
+
+                    if (j == 2 && dimesions[0] > 10 && dimesions[1] > 10)
+                        images.add(var);
+                    else
+                        meta.add(var);
+                }
+
+                if (images.size() > 0)
+                    localGenericDialog.addMessage("Image data:", new Font("Hevletica", Font.BOLD, 12));
+
+                for (int i = 0; i < images.size(); ++i)
+                {
+                    Variable var = (Variable) images.get(i);
+                    long j = var.getNumDims();
+                    long[] dimesions = var.getDimSizes();
+
+                    String name = var.getName() + "              " + VarType(var.getDataType()) + " (";
+                    for (int k = 0; k < j; ++k)
+                    {
+                        if (k != 0)
+                            name += "x";
+                        name += dimesions[k];
+                    }
+                    name += ") ";
+
+                    long rec = var.getNumWrittenRecords();
+                    if (rec > 1)
+                        name += rec + " records";
+                    
+                    int xy = MetaData.getXYCount(var);
+                    
+                    if (xy > 1)
+                        name += " at " + xy + " positions";
+
+                    localGenericDialog.addCheckbox(name, false);
+                }
+
+                String name = "";
+                for (int i = 0; i < meta.size(); ++i)
+                {
+                    Variable var = (Variable) meta.get(i);
+                    long j = var.getNumDims();
+                    long[] dimesions = var.getDimSizes();
+
+                    name += "    " + var.getName() + "              " + VarType(var.getDataType()) + " (";
+                    for (int k = 0; k < j; ++k)
+                    {
+                        if (k != 0)
+                            name += "x";
+                        name += dimesions[k];
+                    }
+                    name += ") ";
+
+                    long rec = var.getNumWrittenRecords();
+                    if (rec > 1)
+                        name += rec + " records";
+
+                    name += "\n";
+                }
+
+                if (meta.size() > 0)
+                {
+                    localGenericDialog.addMessage("Meta data:", new Font("Hevletica", Font.BOLD, 12));
+                    localGenericDialog.addMessage(name);
+                }
+
+                localGenericDialog.showDialog();
+
+                if (localGenericDialog.wasCanceled())
+                {
+                    IJ.error("Plugin canceled!");
+                    return;
+                }
+            }
+
+            Vector<MetaData> m = new Vector<MetaData>();
+            int width = 0, height = 0;
+
+            for (int i = 0; i < images.size(); ++i)
+            {
+
+                if (!(localGenericDialog.getNextBoolean()))
+                    continue;
+
+                Variable var = (Variable) images.get(i);
+
+                if (m.size() == 0)
+                {
+                    width = (int) var.getDimSizes()[1];
+                    height = (int) var.getDimSizes()[0];
+                    m.add(new MetaData(var, meta));
+                }
+                else
+                {
+                    if (width == (int) var.getDimSizes()[1] || height == (int) var.getDimSizes()[0])
+                    {
+                        m.add(new MetaData(var, meta));
+                    }
+                    else
+                    {
+                        IJ.error("Channel " + var.getName()
+                                + String.format(" (%dx%d)", (int) var.getDimSizes()[1], (int) var.getDimSizes()[0])
+                                + " varies in size from first read channel " + m.firstElement().getVar().getName()
+                                + String.format(" (%dx%d)", width, height) + "it is going to be skipped");
+                    }
+                }
+            }
+
+            VirtualCDFStack stack = new VirtualCDFStack(width, height, m, 0);
+            if (stack != null && stack.getSize() > 0)
+            {
+                ImagePlus imp = new ImagePlus("Q-PHASE", stack);
+                imp.setDimensions(m.size(), m.firstElement().getZCount(), m.firstElement().getTimeSlots());
+
+                System.out.println("dimensions " + imp.getNDimensions() + " stack size " + imp.getStackSize()
+                        + String.format(" HS dims C=%d Z=%d T=%d", m.size(), m.firstElement().getZCount(),
+                                m.firstElement().getTimeSlots()));
+
+                ImagePlus imp2 = imp;
+
+                if (m.size() > 1 && imp.getBitDepth() != 24)
+                {
+                    imp2 = new CompositeImage(imp, IJ.GRAYSCALE);
+                }
+                
+                Calibration c = m.firstElement().getCalibration(0);
+                imp.setCalibration(c);
+                imp2.setCalibration(c);
+                
+                imp2.setOpenAsHyperStack(true);
+
+                if (imp != imp2)
+                {
+                    imp2.setOverlay(imp.getOverlay());
+                    imp.hide();
+                    imp2.show();
+                    WindowManager.setCurrentWindow(imp2.getWindow());
+                }
+            }
+
+        }
+        catch (CDFException e)
+        {
+            // TODO Auto-generated catch block
+            System.err.println(e.toString());
+            e.printStackTrace();
+        }
+        catch (OutOfMemoryError localOutOfMemoryError)
+        {
+            IJ.outOfMemory("Load CDF");
+        }
+
+        // try {
+        // if (cdfFile != null)
+        // cdfFile.close();
+        // } catch ( CDFException localIOException2) {
+        // System.err.println("Error while closing '" + str1 + str2 + "'");
+        // System.err.println(localIOException2);
+        // IJ.showStatus("Error closing file.");
+        // }
+
+        IJ.showProgress(1.0D);
+    }
+
 }
-
-
-

@@ -99,9 +99,8 @@ public class CDF_Reader_ implements PlugIn
             Vector<Variable> images = new Vector<Variable>();
             Vector<Variable> meta = new Vector<Variable>();
 
-            GenericDialog localGenericDialog = new GenericDialog("Variable Name Selection");
-            localGenericDialog.addMessage("Please select variables to be loaded.\n",
-                    new Font("Hevletica", Font.BOLD, 14));
+            GenericDialog gd = new GenericDialog("Variable Name Selection");
+            gd.addMessage("Please select variables to be loaded.\n", new Font("Hevletica", Font.BOLD, 14));
 
             if (varList.size() < 1)
             {
@@ -112,7 +111,7 @@ public class CDF_Reader_ implements PlugIn
 
             if (varList.size() < 2)
             {
-                localGenericDialog.addCheckbox("single variable", true);
+                gd.addCheckbox("single variable", true);
             }
             else
             {
@@ -129,39 +128,74 @@ public class CDF_Reader_ implements PlugIn
                 }
 
                 if (images.size() > 0)
-                    localGenericDialog.addMessage("Image data:", new Font("Hevletica", Font.BOLD, 12));
-
-                for (int i = 0; i < images.size(); ++i)
                 {
-                    Variable var = (Variable) images.get(i);
-                    long j = var.getNumDims();
-                    long[] dimesions = var.getDimSizes();
+                    // gd.addMessage("Image data:", new Font("Hevletica", Font.BOLD, 12));
 
-                    String name = var.getName() + "              " + VarType(var.getDataType()) + " (";
-                    for (int k = 0; k < j; ++k)
+                    String[] headings = { "Image data:" };
+                    String[] labels = new String[images.size()];
+                    boolean[] def = new boolean[images.size()];
+
+                    for (int i = 0; i < images.size(); ++i)
                     {
-                        if (k != 0)
-                            name += "x";
-                        name += dimesions[k];
+                        Variable var = images.get(i);
+                        long j = var.getNumDims();
+                        long[] dimesions = var.getDimSizes();
+
+                        String name = var.getName() + " (";
+                        for (int k = 0; k < j; ++k)
+                        {
+                            if (k != 0)
+                                name += "x";
+                            name += dimesions[k];
+                        }
+                        name += ")                ";
+
+                        long rec = var.getNumWrittenRecords();
+                        if (rec > 1)
+                            name += rec + " records";
+
+                        int xy = MetaData.getXYCount(var);
+
+                        if (xy > 1)
+                            name += " at " + xy + " positions ";
+
+                        name += VarType(var.getDataType());
+
+                        labels[i] = name;
+                        def[i] = false;
                     }
-                    name += ") ";
-
-                    long rec = var.getNumWrittenRecords();
-                    if (rec > 1)
-                        name += rec + " records";
                     
-                    int xy = MetaData.getXYCount(var);
+                    def[1] = true;
                     
-                    if (xy > 1)
-                        name += " at " + xy + " positions";
+                    gd.addCheckboxGroup(images.size(), 1, labels, def, headings);
 
-                    localGenericDialog.addCheckbox(name, false);
+                    int cnt = MetaData.getXYCount(images.firstElement());
+                    if (cnt > 1)
+                    {
+                        headings[0] = "Positions XY:";
+
+                        labels = new String[cnt];
+                        def = new boolean[cnt];
+                        for (int i = 0; i < cnt; ++i)
+                        {
+                            labels[i] = Integer.toString(i);
+                            def[i] = false;
+                        }
+                        def[0] = true;
+
+                        int cols = 4;
+                        int z = cnt % cols;
+                        if (cnt < cols)
+                            gd.addCheckboxGroup(1, cnt, labels, def, headings);
+                        else
+                            gd.addCheckboxGroup((z == 0) ? (cnt / 4) : (cnt / 4 + 1), 4, labels, def, headings);
+                    }
                 }
 
                 String name = "";
                 for (int i = 0; i < meta.size(); ++i)
                 {
-                    Variable var = (Variable) meta.get(i);
+                    Variable var = meta.get(i);
                     long j = var.getNumDims();
                     long[] dimesions = var.getDimSizes();
 
@@ -183,13 +217,15 @@ public class CDF_Reader_ implements PlugIn
 
                 if (meta.size() > 0)
                 {
-                    localGenericDialog.addMessage("Meta data:", new Font("Hevletica", Font.BOLD, 12));
-                    localGenericDialog.addMessage(name);
+                    gd.setInsets(10, 0, 0);
+                    gd.addMessage("Meta data:", new Font("Hevletica", Font.BOLD, 12));
+                    gd.setInsets(0, 0, 0);
+                    gd.addMessage(name);
                 }
 
-                localGenericDialog.showDialog();
+                gd.showDialog();
 
-                if (localGenericDialog.wasCanceled())
+                if (gd.wasCanceled())
                 {
                     IJ.error("Plugin canceled!");
                     return;
@@ -202,7 +238,7 @@ public class CDF_Reader_ implements PlugIn
             for (int i = 0; i < images.size(); ++i)
             {
 
-                if (!(localGenericDialog.getNextBoolean()))
+                if (!(gd.getNextBoolean()))
                     continue;
 
                 Variable var = (Variable) images.get(i);
@@ -229,38 +265,46 @@ public class CDF_Reader_ implements PlugIn
                 }
             }
 
-            VirtualCDFStack stack = new VirtualCDFStack(width, height, m, 0);
-            if (stack != null && stack.getSize() > 0)
+            if (m.size() > 0)
             {
-                ImagePlus imp = new ImagePlus("Q-PHASE", stack);
-                imp.setDimensions(m.size(), m.firstElement().getZCount(), m.firstElement().getTimeSlots());
-
-                System.out.println("dimensions " + imp.getNDimensions() + " stack size " + imp.getStackSize()
-                        + String.format(" HS dims C=%d Z=%d T=%d", m.size(), m.firstElement().getZCount(),
-                                m.firstElement().getTimeSlots()));
-
-                ImagePlus imp2 = imp;
-
-                if (m.size() > 1 && imp.getBitDepth() != 24)
+                int cnt = m.firstElement().getXYCount();
+                for (int i = 0; i < cnt; ++i)
                 {
-                    imp2 = new CompositeImage(imp, IJ.GRAYSCALE);
-                }
-                
-                Calibration c = m.firstElement().getCalibration(0);
-                imp.setCalibration(c);
-                imp2.setCalibration(c);
-                
-                imp2.setOpenAsHyperStack(true);
 
-                if (imp != imp2)
-                {
-                    imp2.setOverlay(imp.getOverlay());
-                    imp.hide();
-                    imp2.show();
-                    WindowManager.setCurrentWindow(imp2.getWindow());
+                    if (!(gd.getNextBoolean()))
+                        continue;
+
+                    VirtualCDFStack stack = new VirtualCDFStack(width, height, m, i);
+                    if (stack != null && stack.getSize() > 0)
+                    {
+                        ImagePlus imp = new ImagePlus("Q-PHASE", stack);
+                        imp.setDimensions(m.size(), m.firstElement().getZCount(), m.firstElement().getTimeSlots());
+
+                        System.out.println("dimensions " + imp.getNDimensions() + " stack size " + imp.getStackSize()
+                                + String.format(" HS dims C=%d Z=%d T=%d", m.size(), m.firstElement().getZCount(),
+                                        m.firstElement().getTimeSlots()));
+
+                        ImagePlus imp2 = imp;
+                        Calibration c = m.firstElement().getCalibration(0);
+                        imp.setCalibration(c);
+
+                        if (m.size() > 1 && imp.getBitDepth() != 24)
+                        {
+                            imp2 = new CompositeImage(imp, IJ.GRAYSCALE);
+                            imp2.setCalibration(c);
+
+                            imp2.setOverlay(imp.getOverlay());
+                            imp.hide();
+                        }
+
+                        imp2.setOpenAsHyperStack(true);
+
+                        imp2.show();
+                        WindowManager.setCurrentWindow(imp2.getWindow());
+
+                    }
                 }
             }
-
         }
         catch (CDFException e)
         {

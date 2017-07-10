@@ -165,7 +165,8 @@ public class CDF_Reader_ implements PlugIn
                         def[i] = false;
                     }
                     
-                    def[1] = true;
+                    if(images.size() > 1)
+                    	def[1] = true;
                     
                     gd.addCheckboxGroup(images.size(), 1, labels, def, headings);
 
@@ -271,8 +272,8 @@ public class CDF_Reader_ implements PlugIn
                 for (int i = 0; i < cnt; ++i)
                 {
 
-                    if (!(gd.getNextBoolean()))
-                        continue;
+					if (cnt != 1 && !(gd.getNextBoolean()))
+							continue;
 
                     VirtualCDFStack stack = new VirtualCDFStack(width, height, m, i);
                     if (stack != null && stack.getSize() > 0)

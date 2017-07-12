@@ -152,7 +152,7 @@ public class CDF_Reader_ implements PlugIn
 
                         long rec = var.getNumWrittenRecords();
                         if (rec > 1)
-                            name += rec + " records";
+                            name += rec + " records ";
 
                         int xy = MetaData.getXYCount(var);
 

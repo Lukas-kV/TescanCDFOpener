@@ -70,7 +70,7 @@ public class MetaDataViewer extends Panel
             MetaStruct ms = m.getMetaStruct(recordIndex);
             if (ms != null)
             {
-                lblCamera.setText("Exposure: " + ms.camera.exposure + " ms");
+                lblCamera.setText(String.format("Exposure: %.0f ms", ms.camera.exposure));
 
                 lblObjective.setText(String.format("Lens: %.0fx/%.2f  FOV: %.2f x %.2f µm", ms.objectives.magnification,
                         ms.objectives.NA, ms.objectives.fov.x, ms.objectives.fov.y));

@@ -2,6 +2,6 @@
 <!-- Configuration of the Ant build system to generate a Jar file --> 
 <project name="CDF Reader" default="CreateJar">
   <target name="CreateJar" description="Create Jar file">
-        <jar jarfile="CDF_Reader_.jar" basedir="./target/classes" includes="**/*.class" />
+        <jar jarfile="CDF_Reader_.jar" basedir="./target/classes" includes="**/*.class,plugins.config" />
   </target>
 </project>

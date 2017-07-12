@@ -126,7 +126,7 @@ public class MetaData
 		{
 			try 
 			{
-				result = ((String[]) globalTimeSlots.getRecordObject(r).getData())[0];
+				result = ((String[]) globalTimeSlots.getRecordObject(r).getData())[0].trim();
 			} 
 			catch (CDFException e) 
 			{
@@ -151,7 +151,7 @@ public class MetaData
 		{
 			try 
 			{
-				result = ((String[]) time.getRecordObject(r).getData())[0];
+				result = ((String[]) time.getRecordObject(r).getData())[0].trim();
 			} 
 			catch (CDFException e) 
 			{
@@ -184,7 +184,11 @@ public class MetaData
 				e.printStackTrace();				
 			}
 			
+			//System.out.println(result);
 		}
+//		else
+//		    System.out.println("empty meta variable");
+		
 		return result;
 	} 
 	
@@ -212,7 +216,7 @@ public class MetaData
         {
 
             Calibration c = new Calibration();
-            System.out.println("Calibration loaded from MetaStruc version" + m.metaVersion);
+            System.out.println("Calibration loaded from MetaStruc version " + m.metaVersion);
 
             c.setUnit("um");
             c.pixelWidth = m.objectives.fov.x / width;

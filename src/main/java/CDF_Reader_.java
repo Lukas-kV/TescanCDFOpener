@@ -173,23 +173,27 @@ public class CDF_Reader_ implements PlugIn
                     int cnt = MetaData.getXYCount(images.firstElement());
                     if (cnt > 1)
                     {
+                        int len = cnt + 1;
                         headings[0] = "Positions XY:";
-
-                        labels = new String[cnt];
-                        def = new boolean[cnt];
+                        
+                        labels = new String[len];
+                        def = new boolean[len];
+                        
+                        labels[0] = "Single Hyperstack";
+                        def[0] = true;
+                        
                         for (int i = 0; i < cnt; ++i)
                         {
-                            labels[i] = Integer.toString(i);
-                            def[i] = false;
+                            labels[i + 1] = Integer.toString(i);
+                            def[i + 1] = false;
                         }
-                        def[0] = true;
 
                         int cols = 4;
-                        int z = cnt % cols;
-                        if (cnt < cols)
-                            gd.addCheckboxGroup(1, cnt, labels, def, headings);
+                        int z = len % cols;
+                        if (len < cols)
+                            gd.addCheckboxGroup(1, len, labels, def, headings);
                         else
-                            gd.addCheckboxGroup((z == 0) ? (cnt / 4) : (cnt / 4 + 1), 4, labels, def, headings);
+                            gd.addCheckboxGroup((z == 0) ? (len / 4) : (cnt / 4 + 1), 4, labels, def, headings);
                     }
                 }
 
@@ -269,42 +273,17 @@ public class CDF_Reader_ implements PlugIn
             if (m.size() > 0)
             {
                 int cnt = m.firstElement().getXYCount();
-                for (int i = 0; i < cnt; ++i)
+
+                if (cnt == 1 || gd.getNextBoolean()) // single hyperstack
                 {
-
-					if (cnt != 1 && !(gd.getNextBoolean()))
-							continue;
-
-                    VirtualCDFStack stack = new VirtualCDFStack(width, height, m, i);
-                    if (stack != null && stack.getSize() > 0)
-                    {
-                        ImagePlus imp = new ImagePlus("Q-PHASE", stack);
-                        imp.setDimensions(m.size(), m.firstElement().getZCount(), m.firstElement().getTimeSlots());
-
-                        System.out.println("dimensions " + imp.getNDimensions() + " stack size " + imp.getStackSize()
-                                + String.format(" HS dims C=%d Z=%d T=%d", m.size(), m.firstElement().getZCount(),
-                                        m.firstElement().getTimeSlots()));
-
-                        ImagePlus imp2 = imp;
-                        Calibration c = m.firstElement().getCalibration(0);
-                        imp.setCalibration(c);
-
-                        if (m.size() > 1 && imp.getBitDepth() != 24)
-                        {
-                            imp2 = new CompositeImage(imp, IJ.GRAYSCALE);
-                            imp2.setCalibration(c);
-
-                            imp2.setOverlay(imp.getOverlay());
-                            imp.hide();
-                        }
-
-                        imp2.setOpenAsHyperStack(true);
-
-                        imp2.show();
-                        WindowManager.setCurrentWindow(imp2.getWindow());
-
-                    }
+                    createStackWindow(new VirtualCDFStack(width, height, m));
                 }
+                else
+                    for (int i = 0; i < cnt; ++i)
+                    {
+                        if (gd.getNextBoolean())
+                            createStackWindow(new VirtualCDFStack(width, height, m, i));
+                    }
             }
         }
         catch (CDFException e)
@@ -330,4 +309,41 @@ public class CDF_Reader_ implements PlugIn
         IJ.showProgress(1.0D);
     }
 
+    private void createStackWindow(VirtualCDFStack stack)
+    {
+        if (stack != null && stack.getSize() > 0)
+        {
+            Vector<MetaData> m = stack.getMetaData();
+            
+            ImagePlus imp = new ImagePlus("Q-PHASE", stack);
+            imp.setDimensions(m.size(), m.firstElement().getZCount(), m.firstElement().getTimeSlots());
+
+            System.out.println("dimensions " + imp.getNDimensions() + " stack size " + imp.getStackSize()
+                    + String.format(" HS dims C=%d Z=%d T=%d", m.size(), m.firstElement().getZCount(),
+                            m.firstElement().getTimeSlots()));
+
+            ImagePlus imp2 = imp;
+            Calibration c = m.firstElement().getCalibration(0);
+            imp.setCalibration(c);
+
+            if (m.size() > 1 && imp.getBitDepth() != 24)
+            {
+                imp2 = new CompositeImage(imp, IJ.GRAYSCALE);
+                imp2.setCalibration(c);
+
+                imp2.setOverlay(imp.getOverlay());
+                imp.hide();
+            }
+
+            imp2.setOpenAsHyperStack(true);
+            imp2.show();
+
+            stack.setUpXYScrollBar(imp2);
+            stack.setUpMetaDataPanel(imp2);
+            
+            WindowManager.setCurrentWindow(imp2.getWindow());
+
+        }
+    }
+    
 }

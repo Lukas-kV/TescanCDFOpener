@@ -30,6 +30,7 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
     private boolean useSelector;
     private ImagePlus imp;
     private MetaDataViewer mv;
+    private long baseDataType;
 
     /**
      * Creates a new, empty virtual stack.
@@ -47,6 +48,8 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
         nSlices = (int) meta.firstElement().getTimeSlots() * meta.firstElement().getZCount() * meta.size();
 
         IJ.showStatus("VirtualCDFStack " + nSlices);
+        
+        baseDataType = getBaseDataType();        
     }
 
     public VirtualCDFStack(int width, int height, Vector<MetaData> _meta) throws CDFException
@@ -60,8 +63,23 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
         nSlices = (int) meta.firstElement().getTimeSlots() * meta.firstElement().getZCount() * meta.size();
 
         IJ.showStatus("VirtualCDFStack " + nSlices);
+        
+        baseDataType = getBaseDataType();
     }
-    
+        
+    public long getBaseDataType()
+    {
+        long result = CDFConstants.CDF_UINT1;
+        
+        for(int i = 0; i < meta.size(); ++i)
+        {
+            long v = meta.elementAt(i).getVar().getDataType();            
+            if(v > result)
+                result = v;            
+        }
+        return result;
+    }
+        
     public Vector<MetaData> getMetaData()
     {
         return meta;
@@ -165,29 +183,48 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
 
         if (dataType == CDFConstants.CDF_UINT2)
         {
-            int pixels = getWidth() * getHeight();
-            short[] b = new short[pixels];
-
-            for (int i = 0; i < pixels; ++i)
+            if(baseDataType > CDFConstants.CDF_UINT2) // should be just CDF_FLOAT or CDF_DOUBLE both converted to FloatProcessor
+                return new FloatProcessor(getWidth(), getHeight(), (int[]) data);
+            else
             {
-                b[i] = (short) ((int[]) data)[i];
+                short[] b = new short[getWidth() * getHeight()];
+
+                for (int i = 0; i < b.length; ++i)
+                {
+                    b[i] = (short) ((int[]) data)[i];
+                }
+                return new ShortProcessor(getWidth(), getHeight(), b, LookUpTable.createGrayscaleColorModel(false));
             }
-            return new ShortProcessor(getWidth(), getHeight(), b, LookUpTable.createGrayscaleColorModel(false));
         }
 
         if (dataType == CDFConstants.CDF_UINT1)
         {
-            int pixels = getWidth() * getHeight();
-            byte[] b = new byte[pixels];
-
-            for (int i = 0; i < pixels; ++i)
-            {
-                b[i] = (byte) (255 * ((short[]) data)[i]);
+            if (baseDataType > CDFConstants.CDF_UINT2)
+            { // convert to FloatProcessor
+                float[] b = new float[getWidth() * getHeight()];
+                for (int i = 0; i < b.length; ++i)
+                {
+                    b[i] = (float) ((short[]) data)[i];
+                }                
+                return new FloatProcessor(getWidth(), getHeight(), b);
             }
+            else
+                if (baseDataType == CDFConstants.CDF_UINT2)
+                { // convert to ShortProcessor
+                    return new ShortProcessor(getWidth(), getHeight(), (short[]) data, LookUpTable.createGrayscaleColorModel(false));
+                }
+                else
+                { // ByteProcessor
+                    byte[] b = new byte[getWidth() * getHeight()];
 
-            return new ByteProcessor(getWidth(), getHeight(), (byte[]) b);
+                    for (int i = 0; i < b.length; ++i)
+                    {
+                        b[i] = (byte) ((short[]) data)[i];
+                    }
+
+                    return new ByteProcessor(getWidth(), getHeight(), (byte[]) b);
+                }
         }
-
         return null;
     }
 

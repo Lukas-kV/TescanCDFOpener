@@ -3,6 +3,8 @@ import java.awt.Panel;
 import javax.swing.BoxLayout;
 
 import MetaStruct.MetaStruct;
+import java.awt.Component;
+import javax.swing.Box;
 
 public class MetaDataViewer extends Panel
 {
@@ -13,6 +15,7 @@ public class MetaDataViewer extends Panel
     
     private Label lblCamera, lblObjective, lblPosition, lblTuning, lblTuning2, lblTimestamp;
     private int ltimeSlot, lrecordIndex;
+    private Component horizontalGlue;
 
     /**
      * Create the frame.
@@ -35,6 +38,9 @@ public class MetaDataViewer extends Panel
         add(lblPosition);
         add(lblTuning);
         add(lblTuning2);
+        
+        horizontalGlue = Box.createHorizontalGlue();
+        add(horizontalGlue);
         
         ltimeSlot = -1;
         lrecordIndex = -1;

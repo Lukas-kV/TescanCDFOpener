@@ -10,6 +10,12 @@ import ij.measure.Calibration;
 import ij.plugin.PlugIn;
 
 import java.awt.Font;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.util.Date;
 import java.util.Vector;
 
 // NASA CDF dependencies 
@@ -20,7 +26,147 @@ import gsfc.nssdc.cdf.Variable;
 
 public class CDF_Reader_ implements PlugIn
 {
+    static 
+    {
+        String libDirs = System.getProperty("java.library.path");
+        
+        String libDir = "./lib/win64";
+        if(!libDirs.isEmpty())
+        {
+            libDir = libDirs.split(";")[0];
+        }
+        
+        String plugDir =  System.getProperty("plugins.dir") + "/plugins";       
+        String plugin = plugDir + "/CDF_Reader_.jar";
+        
+        System.out.println("lib paths = " + libDirs);
+        System.out.println("lib path = " + libDir);
+        System.out.println("plugins = " + plugDir);
+        System.out.println("plugin = " + plugin);
+        
+        File theDir = new File(libDir);
+        boolean result = false;
+        try
+        {
+            result = theDir.mkdirs();            
+        }
+        catch (SecurityException e)
+        {
+            System.err.println(e.toString());
+            e.printStackTrace();
+        }
+        
+        boolean copy = false;
+        if (result)
+        {
+            copy = true;
+            System.out.println("DIR created");
+        }
+        else
+        {
+            System.out.println("Checking library date");
+            
+            BasicFileAttributes pattr = null, lattr = null, l2attr = null;
+            
+            try
+            {
+                pattr = Files.readAttributes(new File(plugin).toPath(), BasicFileAttributes.class);
+                lattr = Files.readAttributes(new File(libDir + "/cdfNativeLibrary.dll").toPath(), BasicFileAttributes.class);
+                l2attr = Files.readAttributes(new File(libDir + "/dllcdf.dll").toPath(), BasicFileAttributes.class);
+                
+            }
+            catch (IOException e1)
+            {
+                e1.printStackTrace();
+            }
+            
+            copy = (pattr.lastModifiedTime().compareTo(lattr.lastModifiedTime()) > 0) || (pattr.lastModifiedTime().compareTo(l2attr.lastModifiedTime()) > 0);
 
+            System.out.println("pT  = " + pattr.lastModifiedTime().toString());
+            System.out.println("lT  = " + lattr.lastModifiedTime().toString());
+            System.out.println("l2T = " + l2attr.lastModifiedTime().toString());
+            
+            if(copy)
+                System.out.println("Extracting new libs");
+            else
+                System.out.println("Libs OK");                
+        }
+        
+        if (copy)
+        {
+            try
+            {
+                CopyLib("win32-x86-64/dllcdf.dll", libDir);
+                CopyLib("win32-x86-64/cdfNativeLibrary.dll", libDir);
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+//        System.loadLibrary(new File(libDir + "/dllcdf.dll").getAbsolutePath());                
+//        System.loadLibrary(new File(libDir + "/cdfNativeLibrary.dll").getAbsolutePath());        
+    }
+       
+    
+    public static void CopyLib(String path, String destDir) throws IOException
+    {
+        System.out.println("extracting file " + path + " to dir " + destDir); 
+                
+        byte[] buffer = new byte[1024];
+        int readBytes;
+ 
+        // Open and check input stream
+        InputStream is = CDF_Reader_.class.getResourceAsStream(path);
+        if (is == null) 
+        {
+            throw new FileNotFoundException("File " + path + " was not found inside JAR.");
+        }
+ 
+        String[] parts = path.split("/");
+        String filename = (parts.length > 1) ? parts[parts.length - 1] : null;
+        
+        File of = new File(destDir + "/" + filename);
+        // Open output stream and copy data between source file in JAR and
+        // the temporary file
+        OutputStream os = new FileOutputStream(of);
+        try
+        {
+            while ((readBytes = is.read(buffer)) != -1)
+            {
+                os.write(buffer, 0, readBytes);
+            }
+        }
+        finally
+        {
+            // If read/write fails, close streams safely before throwing an
+            // exception
+            os.close();
+            is.close();
+        }
+
+//        FileTime time = FileTime.fromMillis( new Date().getTime());
+//        Files.setAttribute(of.toPath(), "creationTime", time);        
+    }
+    
+    public static File RenameFile(File file, String newname)
+    {
+        File ff = null;
+        Path source = file.toPath();
+        try 
+        {            
+            Path f = source.resolveSibling(newname);
+            ff = f.toFile();
+            Files.move(source, f);
+        } 
+        catch (IOException e) 
+        {
+             e.printStackTrace();
+        }
+            
+        return ff;
+    }
+    
     public static String VarType(long dataType)
     {
 

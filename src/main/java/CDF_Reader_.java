@@ -68,23 +68,33 @@ public class CDF_Reader_ implements PlugIn
             
             BasicFileAttributes pattr = null, lattr = null, l2attr = null;
             
-            try
-            {
-                pattr = Files.readAttributes(new File(plugin).toPath(), BasicFileAttributes.class);
-                lattr = Files.readAttributes(new File(libDir + "/cdfNativeLibrary.dll").toPath(), BasicFileAttributes.class);
-                l2attr = Files.readAttributes(new File(libDir + "/dllcdf.dll").toPath(), BasicFileAttributes.class);
-                
-            }
-            catch (IOException e1)
-            {
-                e1.printStackTrace();
-            }
+            File cdfnl = new File(libDir + "/cdfNativeLibrary.dll");
+            File cdfdll = new File(libDir + "/dllcdf.dll");
             
-            copy = (pattr.lastModifiedTime().compareTo(lattr.lastModifiedTime()) > 0) || (pattr.lastModifiedTime().compareTo(l2attr.lastModifiedTime()) > 0);
+            if(cdfnl.exists() && cdfnl.isFile() && cdfdll.exists() && cdfdll.isFile())
+            {
+                try
+                {
+                    pattr = Files.readAttributes(new File(plugin).toPath(), BasicFileAttributes.class);
+                    lattr = Files.readAttributes(cdfnl.toPath(), BasicFileAttributes.class);
+                    l2attr = Files.readAttributes(cdfdll.toPath(), BasicFileAttributes.class);
 
-            System.out.println("pT  = " + pattr.lastModifiedTime().toString());
-            System.out.println("lT  = " + lattr.lastModifiedTime().toString());
-            System.out.println("l2T = " + l2attr.lastModifiedTime().toString());
+                }
+                catch (IOException e1)
+                {
+                    e1.printStackTrace();
+                }
+
+                copy = (pattr.lastModifiedTime().compareTo(lattr.lastModifiedTime()) > 0)
+                        || (pattr.lastModifiedTime().compareTo(l2attr.lastModifiedTime()) > 0);
+
+                System.out.println("pT  = " + pattr.lastModifiedTime().toString());
+                System.out.println("lT  = " + lattr.lastModifiedTime().toString());
+                System.out.println("l2T = " + l2attr.lastModifiedTime().toString());
+            }
+            else
+                copy = true;
+            
             
             if(copy)
                 System.out.println("Extracting new libs");

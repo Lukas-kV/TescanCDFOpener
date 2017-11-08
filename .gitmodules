@@ -1,0 +1,3 @@
+[submodule "jcdf"]
+	path = jcdf
+	url = https://github.com/mbtaylor/jcdf.git

@@ -14,18 +14,17 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.FileTime;
-import java.util.Date;
 import java.util.Vector;
 
-// NASA CDF dependencies 
-import gsfc.nssdc.cdf.CDF;
-import gsfc.nssdc.cdf.CDFConstants;
-import gsfc.nssdc.cdf.CDFException;
-import gsfc.nssdc.cdf.Variable;
+import uk.ac.bristol.star.cdf.CdfContent;
+import uk.ac.bristol.star.cdf.CdfReader;
+import uk.ac.bristol.star.cdf.DataType;
+import uk.ac.bristol.star.cdf.Variable;
+import uk.ac.bristol.star.cdf.VariableAttribute;
 
 public class CDF_Reader_ implements PlugIn
 {
+	/*
     static 
     {
         String libDirs = System.getProperty("java.library.path");
@@ -159,7 +158,7 @@ public class CDF_Reader_ implements PlugIn
 //        Files.setAttribute(of.toPath(), "creationTime", time);        
     }
     
-    public static File RenameFile(File file, String newname)
+    public static File RenameFile(File file, String newname) 
     {
         File ff = null;
         Path source = file.toPath();
@@ -176,59 +175,60 @@ public class CDF_Reader_ implements PlugIn
             
         return ff;
     }
-    
-    public static String VarType(long dataType)
+    */
+	
+    public static String VarType(DataType dataType)
     {
 
-        if (dataType == CDFConstants.CDF_BYTE) // java.lang.Byte
+        if (dataType == DataType.BYTE) // java.lang.Byte
             return "CDF_BYTE (Byte)";
 
-        if (dataType == CDFConstants.CDF_INT1) // java.lang.Byte
+        if (dataType == DataType.INT1) // java.lang.Byte
             return "CDF_INT1 (Byte)";
 
-        if (dataType == CDFConstants.CDF_UINT1) // java.lang.Short
+        if (dataType == DataType.UINT1) // java.lang.Short
             return "CDF_UINT1 (Short)";
 
-        if (dataType == CDFConstants.CDF_INT2) // java.lang.Short
+        if (dataType == DataType.INT2) // java.lang.Short
             return "CDF_INT2 (Short)";
 
-        if (dataType == CDFConstants.CDF_UINT2) // java.lang.Integer
+        if (dataType == DataType.UINT2) // java.lang.Integer
             return "CDF_UINT2 (Integer)";
 
-        if (dataType == CDFConstants.CDF_INT4) // java.lang.Integer
+        if (dataType == DataType.INT4) // java.lang.Integer
             return "CDF_INT4 (Integer)";
 
-        if (dataType == CDFConstants.CDF_UINT4) // java.lang.Long
+        if (dataType == DataType.UINT4) // java.lang.Long
             return "CDF_UINT4 (Long)";
 
-        if (dataType == CDFConstants.CDF_INT8) // java.lang.Long
+        if (dataType == DataType.INT8) // java.lang.Long
             return "CDF_INT8 (Long)";
 
-        if (dataType == CDFConstants.CDF_FLOAT) // java.lang.Float
+        if (dataType == DataType.FLOAT) // java.lang.Float
             return "CDF_FLOAT (Float)";
 
-        if (dataType == CDFConstants.CDF_REAL4) // java.lang.Float
+        if (dataType == DataType.REAL4) // java.lang.Float
             return "CDF_REAL4 (Float)";
 
-        if (dataType == CDFConstants.CDF_DOUBLE) // java.lang.Double
+        if (dataType == DataType.DOUBLE) // java.lang.Double
             return "CDF_DOUBLE (Double)";
 
-        if (dataType == CDFConstants.CDF_REAL8) // java.lang.Double
+        if (dataType == DataType.REAL8) // java.lang.Double
             return "CDF_REAL8 (Double)";
 
-        if (dataType == CDFConstants.CDF_EPOCH) // java.lang.Double
+        if (dataType == DataType.EPOCH) // java.lang.Double
             return "CDF_EPOCH (Double)";
 
-        if (dataType == CDFConstants.CDF_EPOCH16) // java.lang.Double
+        if (dataType == DataType.EPOCH16) // java.lang.Double
             return "CDF_EPOCH16 (Double)";
 
-        if (dataType == CDFConstants.CDF_TIME_TT2000) // java.lang.Long
+        if (dataType == DataType.TIME_TT2000) // java.lang.Long
             return "CDF_TIME_TT2000 (Long)";
 
-        if (dataType == CDFConstants.CDF_CHAR) // java.lang.String
+        if (dataType == DataType.CHAR) // java.lang.String
             return "CDF_CHAR (String)";
 
-        if (dataType == CDFConstants.CDF_UCHAR) // java.lang.String
+        if (dataType == DataType.UCHAR) // java.lang.String
             return "CDF_UCHAR (String)";
 
         return "Unknown Type";
@@ -247,35 +247,36 @@ public class CDF_Reader_ implements PlugIn
 
         // PrintStream localPrintStream = System.out;
 
-        CDF cdfFile = null;
         try
-        {
-            cdfFile = CDF.open(str1 + str2);
-            Vector<Variable> varList = cdfFile.getVariables();
+        {        	
+        	CdfContent content = new CdfContent( new CdfReader(new File(str1 + str2)) );
+        	
+        	Variable[] varList = content.getVariables();
+        	VariableAttribute[] vatts = content.getVariableAttributes();
+        	
             Vector<Variable> images = new Vector<Variable>();
             Vector<Variable> meta = new Vector<Variable>();
 
             GenericDialog gd = new GenericDialog("Variable Name Selection");
             gd.addMessage("Please select variables to be loaded.\n", new Font("Hevletica", Font.BOLD, 14));
 
-            if (varList.size() < 1)
+            if (varList.length < 1)
             {
                 IJ.error("The file did not contain variables. (broken?)");
-                cdfFile.close();
                 return;
             }
 
-            if (varList.size() < 2)
+            if (varList.length < 2)
             {
                 gd.addCheckbox("single variable", true);
             }
             else
             {
-                for (int i = 0; i < varList.size(); ++i)
+                for (int i = 0; i < varList.length; ++i)
                 {
-                    Variable var = (Variable) varList.get(i);
-                    long j = var.getNumDims();
-                    long[] dimesions = var.getDimSizes();
+                    Variable var = varList[i];
+                    int[] dimesions = var.getShaper().getDimSizes();
+                    long j = dimesions.length;
 
                     if (j == 2 && dimesions[0] > 10 && dimesions[1] > 10)
                         images.add(var);
@@ -294,8 +295,8 @@ public class CDF_Reader_ implements PlugIn
                     for (int i = 0; i < images.size(); ++i)
                     {
                         Variable var = images.get(i);
-                        long j = var.getNumDims();
-                        long[] dimesions = var.getDimSizes();
+                        int[] dimesions = var.getShaper().getDimSizes();
+                        long j = dimesions.length;
 
                         String name = var.getName() + " (";
                         for (int k = 0; k < j; ++k)
@@ -306,11 +307,11 @@ public class CDF_Reader_ implements PlugIn
                         }
                         name += ")                ";
 
-                        long rec = var.getNumWrittenRecords();
+                        long rec = var.getRecordCount();
                         if (rec > 1)
                             name += rec + " records ";
 
-                        int xy = MetaData.getXYCount(var);
+                        int xy = MetaData.getXYCount(var, vatts);
 
                         if (xy > 1)
                             name += " at " + xy + " positions ";
@@ -326,7 +327,7 @@ public class CDF_Reader_ implements PlugIn
                     
                     gd.addCheckboxGroup(images.size(), 1, labels, def, headings);
 
-                    int cnt = MetaData.getXYCount(images.firstElement());
+                    int cnt = MetaData.getXYCount(images.firstElement(), vatts);
                     if (cnt > 1)
                     {
                         int len = cnt + 1;
@@ -357,8 +358,8 @@ public class CDF_Reader_ implements PlugIn
                 for (int i = 0; i < meta.size(); ++i)
                 {
                     Variable var = meta.get(i);
-                    long j = var.getNumDims();
-                    long[] dimesions = var.getDimSizes();
+                    int[] dimesions = var.getShaper().getDimSizes();
+                    long j = dimesions.length;
 
                     name += "    " + var.getName() + "              " + VarType(var.getDataType()) + " (";
                     for (int k = 0; k < j; ++k)
@@ -369,7 +370,7 @@ public class CDF_Reader_ implements PlugIn
                     }
                     name += ") ";
 
-                    long rec = var.getNumWrittenRecords();
+                    long rec = var.getRecordCount();
                     if (rec > 1)
                         name += rec + " records";
 
@@ -406,26 +407,29 @@ public class CDF_Reader_ implements PlugIn
 
                 if (m.size() == 0)
                 {
-                    width = (int) var.getDimSizes()[1];
-                    height = (int) var.getDimSizes()[0];
-                    m.add(new MetaData(var, meta));
+                    int[] dimesions = var.getShaper().getDimSizes();
+                    width = dimesions[1];
+                    height = dimesions[0];
+                    m.add(new MetaData(var, meta, vatts));
                 }
                 else
                 {
-                    if (width == (int) var.getDimSizes()[1] || height == (int) var.getDimSizes()[0])
+                	int[] dimesions = var.getShaper().getDimSizes();
+                    if (width == dimesions[1] || height == dimesions[0])
                     {
-                        m.add(new MetaData(var, meta));
+                        m.add(new MetaData(var, meta, vatts));
                     }
                     else
                     {
                         IJ.error("Channel " + var.getName()
-                                + String.format(" (%dx%d)", (int) var.getDimSizes()[1], (int) var.getDimSizes()[0])
+                                + String.format(" (%dx%d)", dimesions[1], dimesions[0])
                                 + " varies in size from first read channel " + m.firstElement().getVar().getName()
                                 + String.format(" (%dx%d)", width, height) + "it is going to be skipped");
                     }
                 }
             }
 
+            /*
             if (m.size() > 0)
             {
                 int cnt = m.firstElement().getXYCount();
@@ -440,27 +444,16 @@ public class CDF_Reader_ implements PlugIn
                         if (gd.getNextBoolean())
                             createStackWindow(new VirtualCDFStack(width, height, m, i));
                     }
-            }
-        }
-        catch (CDFException e)
-        {
-            // TODO Auto-generated catch block
-            System.err.println(e.toString());
-            e.printStackTrace();
+            } */
         }
         catch (OutOfMemoryError localOutOfMemoryError)
         {
             IJ.outOfMemory("Load CDF");
-        }
-
-        // try {
-        // if (cdfFile != null)
-        // cdfFile.close();
-        // } catch ( CDFException localIOException2) {
-        // System.err.println("Error while closing '" + str1 + str2 + "'");
-        // System.err.println(localIOException2);
-        // IJ.showStatus("Error closing file.");
-        // }
+        } 
+        catch (IOException e) 
+        {
+			e.printStackTrace();
+		}
 
         IJ.showProgress(1.0D);
     }

@@ -1,10 +1,11 @@
+import java.io.IOException;
 import java.util.Vector;
 
 import com.google.gson.Gson;
 
 import MetaStruct.MetaStruct;
-import gsfc.nssdc.cdf.CDFException;
-import gsfc.nssdc.cdf.Variable;
+import uk.ac.bristol.star.cdf.Variable;
+import uk.ac.bristol.star.cdf.VariableAttribute;
 import ij.measure.Calibration;
 
 public class MetaData 
@@ -13,16 +14,17 @@ public class MetaData
 	private Variable time;
 	private Variable globalTimeSlots;
 	private Variable meta;
-	private Variable position;	
+	private Variable position;
+	private VariableAttribute[] vatts;
 	private int xyCount, zCount, records, timeslots, width, height;	
 	
-	public MetaData(Variable _var, Vector<Variable> metaList)
+	public MetaData(Variable _var, Vector<Variable> metaList, VariableAttribute[] _vatts)
 	{		
 		Variable posHologram = null, metaHologram = null;
 		var = _var;
-		for (int i = 0; i < metaList.size(); ++i)
+		vatts = _vatts;
+		for (Variable v : metaList)
 		{		
-			Variable v = metaList.get(i);
 			String name = v.getName();
 			if(name.contains(var.getName()))
 			{				
@@ -67,43 +69,28 @@ public class MetaData
 		}
 		
 		
-		try 
+		zCount  = 1;
+		xyCount = 1;
+		
+		for(VariableAttribute v : vatts)
 		{
-			zCount  = (Integer) var.getEntryData("zCount");
-		} 
-		catch (CDFException e) 
-		{
-			// TODO Auto-generated catch block
-			//e.printStackTrace();
-			zCount  = 1;
+			switch(v.getName())
+			{
+				case "zCount":
+					zCount  = (Integer) v.getEntry(var).getShapedValue();
+				case "xyCount":
+					xyCount = (Integer) v.getEntry(var).getShapedValue();
+			}			
 		}
 		
-		try 
-		{
-			xyCount = (Integer) var.getEntryData("xyCount");
-		} 
-		catch (CDFException e) 
-		{
-			// TODO Auto-generated catch block
-			//e.printStackTrace();
-			xyCount = 1;
-		}
-		
-		try 
-		{
-			records = (int) var.getNumWrittenRecords();
-		} 
-		catch (CDFException e) 
-		{
-			// TODO Auto-generated catch block
-			records = 0;
-			e.printStackTrace();
-		}
+
+		records = (int) var.getRecordCount();
 		
 		timeslots = records / (zCount * xyCount);
 		
-        width = (int) var.getDimSizes()[1];
-        height = (int) var.getDimSizes()[0];
+		int[] dimesions = var.getShaper().getDimSizes();
+        width  = dimesions[1];
+        height = dimesions[0];
 		
 		System.out.println(var.getName() + " (xyCount=" + xyCount + "  zCount=" + zCount + " records=" + records + " timeslots=" + timeslots +")");
 	}
@@ -118,22 +105,24 @@ public class MetaData
 		return getGlobalTime(getRecordIndex(timeslot, xyIndex, zIndex));
 	}
 	
-	public String getGlobalTime(long r)
+    private Object readShapedRecord( Variable var, int irec, boolean rowMajor ) 
+    {
+        try {
+			return var.readShapedRecord( irec, rowMajor, var.createRawValueArray() );
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+    }
+	
+	public String getGlobalTime(int r)
 	{
 		String result = null;
 		
 		if(globalTimeSlots != null)
 		{
-			try 
-			{
-				result = ((String[]) globalTimeSlots.getRecordObject(r).getData())[0].trim();
-			} 
-			catch (CDFException e) 
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
+			result = readShapedRecord( globalTimeSlots, r, true).toString();
 		}
 		return result;		
 	}
@@ -143,22 +132,13 @@ public class MetaData
 		return getTime(getRecordIndex(timeslot, xyIndex, zIndex));
 	}
 		
-	public String getTime(long r) 
+	public String getTime(int r) 
 	{
 		String result = null;
 		
 		if(time != null)
 		{
-			try 
-			{
-				result = ((String[]) time.getRecordObject(r).getData())[0].trim();
-			} 
-			catch (CDFException e) 
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
+			result = readShapedRecord(time, r, true).toString();
 		}
 		return result;
 	} 
@@ -168,23 +148,14 @@ public class MetaData
 		return getMetaString(getRecordIndex(timeslot, xyIndex, zIndex));
 	}
 	
-	public String getMetaString(long r) 
+	public String getMetaString(int r) 
 	{
 		String result = null;
 		
 		if(meta != null)
 		{
-			try 
-			{
-				result = ((String[]) meta.getRecordObject(r).getData())[0];
-			} 
-			catch (CDFException e) 
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();				
-			}
-			
-			//System.out.println(result);
+			result = readShapedRecord(meta, r, true).toString();			
+//			System.out.println(result);
 		}
 //		else
 //		    System.out.println("empty meta variable");
@@ -197,7 +168,7 @@ public class MetaData
 	    return getMetaStruct(getRecordIndex(timeslot, xyIndex, zIndex));
 	}
 	
-	public MetaStruct getMetaStruct(long r)
+	public MetaStruct getMetaStruct(int r)
 	{
 	    String m = getMetaString(r);
 	    if(m != null)
@@ -208,7 +179,7 @@ public class MetaData
 	    return null;
 	}
 	
-    public Calibration getCalibration(long r)
+    public Calibration getCalibration(int r)
     {
         MetaStruct m = getMetaStruct(r);
 
@@ -234,40 +205,32 @@ public class MetaData
 		return get3DPositions(getRecordIndex(timeslot, xyIndex, zIndex));
 	}
 	
-	public double[] get3DPositions(long r) 
+	public double[] get3DPositions(int r) 
 	{
 		double[] result = null;
 		
 		if(position != null)
 		{
-			try 
-			{
-				result = new double[3];				
-				result = ((double[][]) position.getRecordObject(r).getData())[0];
-			} 
-			catch (CDFException e) 
-			{
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			result = new double[3];				
+			result = (double[]) readShapedRecord(position, r, true);
 			
 		}
 		return result;
 	} 
 	
-    static int getXYCount(Variable var)
+    static int getXYCount(Variable var, VariableAttribute[] _vatts)
     {
-        int c;        
-        try 
-        {
-            c = (Integer) var.getEntryData("xyCount");
-        } 
-        catch (CDFException e) 
-        {
-            // TODO Auto-generated catch block
-            //e.printStackTrace();
-            c = 1;
-        }        
+        int c = 1;
+        		
+		for(VariableAttribute v : _vatts)
+		{
+			if(v.getName() == "xyCount")
+			{
+				c  = (Integer) v.getEntry(var).getShapedValue();
+				break;
+			}
+		}
+		
         return c;
     }
 		

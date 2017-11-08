@@ -23,5 +23,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="C:/CDF_Distribution/cdf36_2-dist/lib/cdfjava.jar"/>
+	<classpathentry kind="lib" path="D:/FIJI_src/TescanCDFOpener/dep/jcdf.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

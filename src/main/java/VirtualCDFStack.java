@@ -9,14 +9,14 @@ import ij.process.ByteProcessor;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
+import uk.ac.bristol.star.cdf.DataType;
+import uk.ac.bristol.star.cdf.Variable;
 
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
+import java.io.IOException;
 import java.util.Vector;
 
-import gsfc.nssdc.cdf.CDFConstants;
-import gsfc.nssdc.cdf.CDFException;
-import gsfc.nssdc.cdf.Variable;
 
 /**
  * This class represents an array of disk-resident images.
@@ -30,14 +30,14 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
     private boolean useSelector;
     private ImagePlus imp;
     private MetaDataViewer mv;
-    private long baseDataType;
+    private DataType baseDataType;
 
     /**
      * Creates a new, empty virtual stack.
      * 
      * @throws CDFException
      */
-    public VirtualCDFStack(int width, int height, Vector<MetaData> _meta, int _xyIndex) throws CDFException
+    public VirtualCDFStack(int width, int height, Vector<MetaData> _meta, int _xyIndex)
     {
         super(width, height);
         useSelector = false;
@@ -52,7 +52,7 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
         baseDataType = getBaseDataType();        
     }
 
-    public VirtualCDFStack(int width, int height, Vector<MetaData> _meta) throws CDFException
+    public VirtualCDFStack(int width, int height, Vector<MetaData> _meta)
     {
         super(width, height);
         useSelector = true;
@@ -67,14 +67,14 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
         baseDataType = getBaseDataType();
     }
         
-    public long getBaseDataType()
+    public DataType getBaseDataType()
     {
-        long result = CDFConstants.CDF_UINT1;
+        DataType result = DataType.UINT1;
         
         for(int i = 0; i < meta.size(); ++i)
         {
-            long v = meta.elementAt(i).getVar().getDataType();            
-            if(v > result)
+        	DataType v = meta.elementAt(i).getVar().getDataType();            
+            if(v.getByteCount() > result.getByteCount())
                 result = v;            
         }
         return result;
@@ -156,34 +156,30 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
         int[] czt = getCZT(n);
         MetaData m = meta.elementAt(czt[0]);
         Variable var = m.getVar();
-        long dataType = var.getDataType();
+        DataType dataType = var.getDataType();
 
-        Object data;
-        try
-        {
-            data = var.getRecordObject(m.getRecordIndex(czt[2], xyIndex, czt[1])).getRawData();
-        }
-        catch (CDFException e)
-        {
-            // TODO Auto-generated catch block
-            System.err.println(e.toString());
-            e.printStackTrace();
-            return null;
-        }
+        Object data = var.createRawValueArray();        
+        try {
+			var.readRawRecord(m.getRecordIndex(czt[2], xyIndex, czt[1]), data);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
 
-        if (dataType == CDFConstants.CDF_DOUBLE)
+        if (dataType == DataType.DOUBLE)
         {
             return new FloatProcessor(getWidth(), getHeight(), (double[]) data);
         }
 
-        if (dataType == CDFConstants.CDF_FLOAT)
+        if (dataType == DataType.FLOAT)
         {
             return new FloatProcessor(getWidth(), getHeight(), (float[]) data);
         }
 
-        if (dataType == CDFConstants.CDF_UINT2)
+        if (dataType == DataType.UINT2)
         {
-            if(baseDataType > CDFConstants.CDF_UINT2) // should be just CDF_FLOAT or CDF_DOUBLE both converted to FloatProcessor
+            if(baseDataType.getByteCount() > DataType.UINT2.getByteCount()) // should be just CDF_FLOAT or CDF_DOUBLE both converted to FloatProcessor
                 return new FloatProcessor(getWidth(), getHeight(), (int[]) data);
             else
             {
@@ -197,9 +193,9 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
             }
         }
 
-        if (dataType == CDFConstants.CDF_UINT1)
+        if (dataType == DataType.UINT1)
         {
-            if (baseDataType > CDFConstants.CDF_UINT2)
+            if (baseDataType.getByteCount() > DataType.UINT2.getByteCount())
             { // convert to FloatProcessor
                 float[] b = new float[getWidth() * getHeight()];
                 for (int i = 0; i < b.length; ++i)
@@ -209,7 +205,7 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
                 return new FloatProcessor(getWidth(), getHeight(), b);
             }
             else
-                if (baseDataType == CDFConstants.CDF_UINT2)
+                if (baseDataType == DataType.UINT2)
                 { // convert to ShortProcessor
                     return new ShortProcessor(getWidth(), getHeight(), (short[]) data, LookUpTable.createGrayscaleColorModel(false));
                 }

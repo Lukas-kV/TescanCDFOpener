@@ -3,6 +3,8 @@
 <project name="CDF Reader" default="CreateJar">
 	<property name="cdflib.dir"     value="c:/CDF_Distribution/cdf36_2-dist/lib"/>
 	<property name="classes.dir"     value="./target/classes"/>
+	<property name="jcdf.dir"     value="./dep"/>
+	
 	
   	<target name="CreateJar" description="Create Jar file">  		
   		<unzip src="${cdflib.dir}/cdfjava.jar" dest="${classes.dir}">
@@ -10,10 +12,17 @@
   		    <include name="gsfc/**/*.*"/>
   		  </patternset>
   		</unzip>
+
+  		<unzip src="${jcdf.dir}/jcdf.jar" dest="${classes.dir}">
+  		  <patternset>
+  		    <include name="uk/**/*.*"/>
+  		  </patternset>
+  		</unzip>
+
   		
-  		<mkdir dir="${classes.dir}/win32-x86-64"/>  		
+  		<!--mkdir dir="${classes.dir}/win32-x86-64"/>  		
   		<copy file="${cdflib.dir}/cdfNativeLibrary.dll" todir="${classes.dir}/win32-x86-64"/>
-  		<copy file="${cdflib.dir}/dllcdf.dll" todir="${classes.dir}/win32-x86-64"/>
+  		<copy file="${cdflib.dir}/dllcdf.dll" todir="${classes.dir}/win32-x86-64"/-->
   		
   		<copy file="plugins.config" todir="${classes.dir}"/>  		
   		

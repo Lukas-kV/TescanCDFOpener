@@ -71,10 +71,10 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
     {
         DataType result = DataType.UINT1;
         
-        for(int i = 0; i < meta.size(); ++i)
+        for(MetaData m : meta)
         {
-        	DataType v = meta.elementAt(i).getVar().getDataType();            
-            if(v.getByteCount() > result.getByteCount())
+        	DataType v = m.getVar().getDataType();            
+            if(VariableExt.DataTypeIndex(v) > VariableExt.DataTypeIndex(result))
                 result = v;            
         }
         return result;
@@ -155,12 +155,16 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
 
         int[] czt = getCZT(n);
         MetaData m = meta.elementAt(czt[0]);
-        Variable var = m.getVar();
+        Variable var = m.getVar().Var();
         DataType dataType = var.getDataType();
 
-        Object data = var.createRawValueArray();        
+        //System.out.println("Stack: " + n + "  " +  m.getRecordIndex(czt[2], xyIndex, czt[1]));
+        
+        Object data = var.createRawValueArray();
+        //System.out.println("Stack Data type: " + dataType.getName() + "  " + data.getClass().getComponentType());
         try {
 			var.readRawRecord(m.getRecordIndex(czt[2], xyIndex, czt[1]), data);
+            //System.out.println("Stack Data: " + var.getName() + " type: " + dataType.getName() + "  " + data.getClass().getComponentType() + " var: " + var.getRecordVariance() );
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -179,7 +183,7 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
 
         if (dataType == DataType.UINT2)
         {
-            if(baseDataType.getByteCount() > DataType.UINT2.getByteCount()) // should be just CDF_FLOAT or CDF_DOUBLE both converted to FloatProcessor
+            if(VariableExt.DataTypeIndex(baseDataType) > VariableExt.DataTypeIndex(DataType.UINT2)) // should be just CDF_FLOAT or CDF_DOUBLE both converted to FloatProcessor
                 return new FloatProcessor(getWidth(), getHeight(), (int[]) data);
             else
             {
@@ -195,7 +199,7 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
 
         if (dataType == DataType.UINT1)
         {
-            if (baseDataType.getByteCount() > DataType.UINT2.getByteCount())
+            if (VariableExt.DataTypeIndex(baseDataType) > VariableExt.DataTypeIndex(DataType.UINT2))
             { // convert to FloatProcessor
                 float[] b = new float[getWidth() * getHeight()];
                 for (int i = 0; i < b.length; ++i)

@@ -12,7 +12,7 @@ public final class About implements PlugIn
     public static void about()
     {
         String msg = "<html><p>TESCAN CDF Plugin for ImageJ</p>" + 
-                "<p>Release: 0.0</p>" + 
+                "<p>Release: 1.0</p>" + 
                 "<p>Copyright (C) 2017</p>" + 
                 "<p><em><a href=\"https://github.com/Lukas-kV/TescanCDFOpener\">TescanCDF</a></em> plugin suitable for reading 6D hyperstacks <br>from custom CDF files (<a href=\"https://cdf.sci.gsfc.nasa.gov/\">CDF &copy; NASA/Goddard Space Flight Center</a>) <br> produced by <a href=\"http://q-phase.tescan.com/\">TESCAN Q-PHASE</a> microscope.</p>" + 
                 "<ul><li>https://github.com/Lukas-kV/TescanCDFOpener</li>" + 

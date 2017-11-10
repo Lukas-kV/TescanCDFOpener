@@ -1,29 +1,24 @@
-import java.io.IOException;
 import java.util.Vector;
 
 import com.google.gson.Gson;
 
 import MetaStruct.MetaStruct;
-import uk.ac.bristol.star.cdf.Variable;
-import uk.ac.bristol.star.cdf.VariableAttribute;
 import ij.measure.Calibration;
 
 public class MetaData 
 {
-	private Variable var;
-	private Variable time;
-	private Variable globalTimeSlots;
-	private Variable meta;
-	private Variable position;
-	private VariableAttribute[] vatts;
+	private VariableExt var;
+	private VariableExt time;
+	private VariableExt globalTimeSlots;
+	private VariableExt meta;
+	private VariableExt position;
 	private int xyCount, zCount, records, timeslots, width, height;	
 	
-	public MetaData(Variable _var, Vector<Variable> metaList, VariableAttribute[] _vatts)
+	public MetaData(VariableExt _var, Vector<VariableExt> metaList)
 	{		
-		Variable posHologram = null, metaHologram = null;
+		VariableExt posHologram = null, metaHologram = null;
 		var = _var;
-		vatts = _vatts;
-		for (Variable v : metaList)
+		for (VariableExt v : metaList)
 		{		
 			String name = v.getName();
 			if(name.contains(var.getName()))
@@ -67,35 +62,26 @@ public class MetaData
 			meta = metaHologram;
 			System.out.println("using Hologram metaData for channel " + var.getName()); 
 		}
+				
+		Object o = var.getEntryData("zCount");
+		zCount  =  (o!=null) ? (Integer) o:1;
+		o = var.getEntryData("xyCount");
+		xyCount  = (o!=null) ? (Integer) o:1;
 		
-		
-		zCount  = 1;
-		xyCount = 1;
-		
-		for(VariableAttribute v : vatts)
-		{
-			switch(v.getName())
-			{
-				case "zCount":
-					zCount  = (Integer) v.getEntry(var).getShapedValue();
-				case "xyCount":
-					xyCount = (Integer) v.getEntry(var).getShapedValue();
-			}			
-		}
-		
-
-		records = (int) var.getRecordCount();
+		records = var.getNumWrittenRecords();
 		
 		timeslots = records / (zCount * xyCount);
 		
-		int[] dimesions = var.getShaper().getDimSizes();
+		int[] dimesions = var.getDimSizes();
         width  = dimesions[1];
         height = dimesions[0];
 		
 		System.out.println(var.getName() + " (xyCount=" + xyCount + "  zCount=" + zCount + " records=" + records + " timeslots=" + timeslots +")");
+		//System.out.println(getMetaString(0));
+		//System.out.println(getGlobalTime(0));
 	}
 
-	public Variable getVar()
+	public VariableExt getVar()
 	{
 		return var;
 	}
@@ -104,25 +90,14 @@ public class MetaData
 	{
 		return getGlobalTime(getRecordIndex(timeslot, xyIndex, zIndex));
 	}
-	
-    private Object readShapedRecord( Variable var, int irec, boolean rowMajor ) 
-    {
-        try {
-			return var.readShapedRecord( irec, rowMajor, var.createRawValueArray() );
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return null;
-		}
-    }
-	
+		
 	public String getGlobalTime(int r)
 	{
 		String result = null;
 		
 		if(globalTimeSlots != null)
 		{
-			result = readShapedRecord( globalTimeSlots, r, true).toString();
+			result = globalTimeSlots.getRecordString(r);			
 		}
 		return result;		
 	}
@@ -138,7 +113,7 @@ public class MetaData
 		
 		if(time != null)
 		{
-			result = readShapedRecord(time, r, true).toString();
+			result = time.getRecordString(r);
 		}
 		return result;
 	} 
@@ -154,7 +129,7 @@ public class MetaData
 		
 		if(meta != null)
 		{
-			result = readShapedRecord(meta, r, true).toString();			
+			result = meta.getRecordString(r);			
 //			System.out.println(result);
 		}
 //		else
@@ -212,26 +187,16 @@ public class MetaData
 		if(position != null)
 		{
 			result = new double[3];				
-			result = (double[]) readShapedRecord(position, r, true);
+			result = (double[]) position.getRecordObject(r);
 			
 		}
 		return result;
 	} 
 	
-    static int getXYCount(Variable var, VariableAttribute[] _vatts)
-    {
-        int c = 1;
-        		
-		for(VariableAttribute v : _vatts)
-		{
-			if(v.getName() == "xyCount")
-			{
-				c  = (Integer) v.getEntry(var).getShapedValue();
-				break;
-			}
-		}
-		
-        return c;
+    static int getXYCount(VariableExt var)
+    {       
+    	Object o = var.getEntryData("xyCount");
+   		return (o!=null) ? (Integer) o:1;		
     }
 		
 	public int getXYCount()

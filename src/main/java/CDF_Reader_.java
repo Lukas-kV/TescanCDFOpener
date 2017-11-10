@@ -11,229 +11,13 @@ import ij.plugin.PlugIn;
 
 import java.awt.Font;
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Vector;
 
 import uk.ac.bristol.star.cdf.CdfContent;
 import uk.ac.bristol.star.cdf.CdfReader;
-import uk.ac.bristol.star.cdf.DataType;
-import uk.ac.bristol.star.cdf.Variable;
-import uk.ac.bristol.star.cdf.VariableAttribute;
 
 public class CDF_Reader_ implements PlugIn
 {
-	/*
-    static 
-    {
-        String libDirs = System.getProperty("java.library.path");
-        
-        String libDir = "./lib/win64";
-        if(!libDirs.isEmpty())
-        {
-            libDir = libDirs.split(";")[0];
-        }
-        
-        String plugDir =  System.getProperty("plugins.dir") + "/plugins";       
-        String plugin = plugDir + "/CDF_Reader_.jar";
-        
-        System.out.println("lib paths = " + libDirs);
-        System.out.println("lib path = " + libDir);
-        System.out.println("plugins = " + plugDir);
-        System.out.println("plugin = " + plugin);
-        
-        File theDir = new File(libDir);
-        boolean result = false;
-        try
-        {
-            result = theDir.mkdirs();            
-        }
-        catch (SecurityException e)
-        {
-            System.err.println(e.toString());
-            e.printStackTrace();
-        }
-        
-        boolean copy = false;
-        if (result)
-        {
-            copy = true;
-            System.out.println("DIR created");
-        }
-        else
-        {
-            System.out.println("Checking library date");
-            
-            BasicFileAttributes pattr = null, lattr = null, l2attr = null;
-            
-            File cdfnl = new File(libDir + "/cdfNativeLibrary.dll");
-            File cdfdll = new File(libDir + "/dllcdf.dll");
-            
-            if(cdfnl.exists() && cdfnl.isFile() && cdfdll.exists() && cdfdll.isFile())
-            {
-                try
-                {
-                    pattr = Files.readAttributes(new File(plugin).toPath(), BasicFileAttributes.class);
-                    lattr = Files.readAttributes(cdfnl.toPath(), BasicFileAttributes.class);
-                    l2attr = Files.readAttributes(cdfdll.toPath(), BasicFileAttributes.class);
-
-                }
-                catch (IOException e1)
-                {
-                    e1.printStackTrace();
-                }
-
-                copy = (pattr.lastModifiedTime().compareTo(lattr.lastModifiedTime()) > 0)
-                        || (pattr.lastModifiedTime().compareTo(l2attr.lastModifiedTime()) > 0);
-
-                System.out.println("pT  = " + pattr.lastModifiedTime().toString());
-                System.out.println("lT  = " + lattr.lastModifiedTime().toString());
-                System.out.println("l2T = " + l2attr.lastModifiedTime().toString());
-            }
-            else
-                copy = true;
-            
-            
-            if(copy)
-                System.out.println("Extracting new libs");
-            else
-                System.out.println("Libs OK");                
-        }
-        
-        if (copy)
-        {
-            try
-            {
-                CopyLib("win32-x86-64/dllcdf.dll", libDir);
-                CopyLib("win32-x86-64/cdfNativeLibrary.dll", libDir);
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-        }
-//        System.loadLibrary(new File(libDir + "/dllcdf.dll").getAbsolutePath());                
-//        System.loadLibrary(new File(libDir + "/cdfNativeLibrary.dll").getAbsolutePath());        
-    }
-       
-    
-    public static void CopyLib(String path, String destDir) throws IOException
-    {
-        System.out.println("extracting file " + path + " to dir " + destDir); 
-                
-        byte[] buffer = new byte[1024];
-        int readBytes;
- 
-        // Open and check input stream
-        InputStream is = CDF_Reader_.class.getResourceAsStream(path);
-        if (is == null) 
-        {
-            throw new FileNotFoundException("File " + path + " was not found inside JAR.");
-        }
- 
-        String[] parts = path.split("/");
-        String filename = (parts.length > 1) ? parts[parts.length - 1] : null;
-        
-        File of = new File(destDir + "/" + filename);
-        // Open output stream and copy data between source file in JAR and
-        // the temporary file
-        OutputStream os = new FileOutputStream(of);
-        try
-        {
-            while ((readBytes = is.read(buffer)) != -1)
-            {
-                os.write(buffer, 0, readBytes);
-            }
-        }
-        finally
-        {
-            // If read/write fails, close streams safely before throwing an
-            // exception
-            os.close();
-            is.close();
-        }
-
-//        FileTime time = FileTime.fromMillis( new Date().getTime());
-//        Files.setAttribute(of.toPath(), "creationTime", time);        
-    }
-    
-    public static File RenameFile(File file, String newname) 
-    {
-        File ff = null;
-        Path source = file.toPath();
-        try 
-        {            
-            Path f = source.resolveSibling(newname);
-            ff = f.toFile();
-            Files.move(source, f);
-        } 
-        catch (IOException e) 
-        {
-             e.printStackTrace();
-        }
-            
-        return ff;
-    }
-    */
-	
-    public static String VarType(DataType dataType)
-    {
-
-        if (dataType == DataType.BYTE) // java.lang.Byte
-            return "CDF_BYTE (Byte)";
-
-        if (dataType == DataType.INT1) // java.lang.Byte
-            return "CDF_INT1 (Byte)";
-
-        if (dataType == DataType.UINT1) // java.lang.Short
-            return "CDF_UINT1 (Short)";
-
-        if (dataType == DataType.INT2) // java.lang.Short
-            return "CDF_INT2 (Short)";
-
-        if (dataType == DataType.UINT2) // java.lang.Integer
-            return "CDF_UINT2 (Integer)";
-
-        if (dataType == DataType.INT4) // java.lang.Integer
-            return "CDF_INT4 (Integer)";
-
-        if (dataType == DataType.UINT4) // java.lang.Long
-            return "CDF_UINT4 (Long)";
-
-        if (dataType == DataType.INT8) // java.lang.Long
-            return "CDF_INT8 (Long)";
-
-        if (dataType == DataType.FLOAT) // java.lang.Float
-            return "CDF_FLOAT (Float)";
-
-        if (dataType == DataType.REAL4) // java.lang.Float
-            return "CDF_REAL4 (Float)";
-
-        if (dataType == DataType.DOUBLE) // java.lang.Double
-            return "CDF_DOUBLE (Double)";
-
-        if (dataType == DataType.REAL8) // java.lang.Double
-            return "CDF_REAL8 (Double)";
-
-        if (dataType == DataType.EPOCH) // java.lang.Double
-            return "CDF_EPOCH (Double)";
-
-        if (dataType == DataType.EPOCH16) // java.lang.Double
-            return "CDF_EPOCH16 (Double)";
-
-        if (dataType == DataType.TIME_TT2000) // java.lang.Long
-            return "CDF_TIME_TT2000 (Long)";
-
-        if (dataType == DataType.CHAR) // java.lang.String
-            return "CDF_CHAR (String)";
-
-        if (dataType == DataType.UCHAR) // java.lang.String
-            return "CDF_UCHAR (String)";
-
-        return "Unknown Type";
-    }
-
     public void run(String paramString)
     {
         OpenDialog localOpenDialog = new OpenDialog("Open CDF...", paramString);
@@ -250,12 +34,11 @@ public class CDF_Reader_ implements PlugIn
         try
         {        	
         	CdfContent content = new CdfContent( new CdfReader(new File(str1 + str2)) );
+        	        	
+        	VariableExt varList[] = VariableExt.Vars(content);
         	
-        	Variable[] varList = content.getVariables();
-        	VariableAttribute[] vatts = content.getVariableAttributes();
-        	
-            Vector<Variable> images = new Vector<Variable>();
-            Vector<Variable> meta = new Vector<Variable>();
+            Vector<VariableExt> images = new Vector<VariableExt>();
+            Vector<VariableExt> meta = new Vector<VariableExt>();
 
             GenericDialog gd = new GenericDialog("Variable Name Selection");
             gd.addMessage("Please select variables to be loaded.\n", new Font("Hevletica", Font.BOLD, 14));
@@ -274,9 +57,9 @@ public class CDF_Reader_ implements PlugIn
             {
                 for (int i = 0; i < varList.length; ++i)
                 {
-                    Variable var = varList[i];
-                    int[] dimesions = var.getShaper().getDimSizes();
-                    long j = dimesions.length;
+                    VariableExt var = varList[i];
+                    long j = var.getNumDims();
+                    int[] dimesions = var.getDimSizes();
 
                     if (j == 2 && dimesions[0] > 10 && dimesions[1] > 10)
                         images.add(var);
@@ -294,9 +77,9 @@ public class CDF_Reader_ implements PlugIn
 
                     for (int i = 0; i < images.size(); ++i)
                     {
-                        Variable var = images.get(i);
-                        int[] dimesions = var.getShaper().getDimSizes();
-                        long j = dimesions.length;
+                        VariableExt var = images.get(i);
+                        long j = var.getNumDims();
+                        int[] dimesions = var.getDimSizes();
 
                         String name = var.getName() + " (";
                         for (int k = 0; k < j; ++k)
@@ -307,27 +90,29 @@ public class CDF_Reader_ implements PlugIn
                         }
                         name += ")                ";
 
-                        long rec = var.getRecordCount();
+                        long rec = var.getNumWrittenRecords();
                         if (rec > 1)
                             name += rec + " records ";
 
-                        int xy = MetaData.getXYCount(var, vatts);
+                        int xy = MetaData.getXYCount(var);
 
                         if (xy > 1)
                             name += " at " + xy + " positions ";
 
-                        name += VarType(var.getDataType());
-
-                        labels[i] = name;
-                        def[i] = false;
+                        name += var.getDataType().getName();
+                        //name += var.getSummary();
+                        
+                        labels[i] = name;                                              
+                        def[i] = (var.getName().equals("Compensated phase"));
+                        
                     }
                     
-                    if(images.size() > 1)
-                    	def[1] = true;
+//                    if(images.size() > 1)
+//                   	def[1] = true;
                     
                     gd.addCheckboxGroup(images.size(), 1, labels, def, headings);
 
-                    int cnt = MetaData.getXYCount(images.firstElement(), vatts);
+                    int cnt = MetaData.getXYCount(images.firstElement());
                     if (cnt > 1)
                     {
                         int len = cnt + 1;
@@ -355,22 +140,24 @@ public class CDF_Reader_ implements PlugIn
                 }
 
                 String name = "";
-                for (int i = 0; i < meta.size(); ++i)
+                for (VariableExt var : meta)
                 {
-                    Variable var = meta.get(i);
-                    int[] dimesions = var.getShaper().getDimSizes();
-                    long j = dimesions.length;
+                    long j = var.getNumDims();
+                    int[] dimesions = var.getDimSizes();
 
-                    name += "    " + var.getName() + "              " + VarType(var.getDataType()) + " (";
+                    //System.out.println("meta dim: " + j + " is Zvar " + var.isZVariable());
+                    
+                    name += "    " + var.getName() + "              " + var.getDataType().getName() + " ";
+                    if( j!=0 ) name += "(";
                     for (int k = 0; k < j; ++k)
                     {
                         if (k != 0)
                             name += "x";
                         name += dimesions[k];
                     }
-                    name += ") ";
+                    if( j!=0 ) name += ") ";
 
-                    long rec = var.getRecordCount();
+                    long rec = var.getNumWrittenRecords();
                     if (rec > 1)
                         name += rec + " records";
 
@@ -397,27 +184,25 @@ public class CDF_Reader_ implements PlugIn
             Vector<MetaData> m = new Vector<MetaData>();
             int width = 0, height = 0;
 
-            for (int i = 0; i < images.size(); ++i)
+            for (VariableExt var : images)
             {
 
                 if (!(gd.getNextBoolean()))
                     continue;
 
-                Variable var = (Variable) images.get(i);
-
                 if (m.size() == 0)
                 {
-                    int[] dimesions = var.getShaper().getDimSizes();
+                    int[] dimesions = var.getDimSizes();
                     width = dimesions[1];
                     height = dimesions[0];
-                    m.add(new MetaData(var, meta, vatts));
+                    m.add(new MetaData(var, meta));
                 }
                 else
                 {
-                	int[] dimesions = var.getShaper().getDimSizes();
+                	int[] dimesions = var.getDimSizes();
                     if (width == dimesions[1] || height == dimesions[0])
                     {
-                        m.add(new MetaData(var, meta, vatts));
+                        m.add(new MetaData(var, meta));
                     }
                     else
                     {
@@ -429,7 +214,7 @@ public class CDF_Reader_ implements PlugIn
                 }
             }
 
-            /*
+            
             if (m.size() > 0)
             {
                 int cnt = m.firstElement().getXYCount();
@@ -444,7 +229,7 @@ public class CDF_Reader_ implements PlugIn
                         if (gd.getNextBoolean())
                             createStackWindow(new VirtualCDFStack(width, height, m, i));
                     }
-            } */
+            } 
         }
         catch (OutOfMemoryError localOutOfMemoryError)
         {

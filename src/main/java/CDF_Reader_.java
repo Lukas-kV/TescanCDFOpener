@@ -1,5 +1,3 @@
-
-/** <a href="http://www.cpupk.com/decompiler">Eclipse Class Decompiler</a> plugin, Copyright (c) 2017 Chen Chao. **/
 import ij.CompositeImage;
 import ij.IJ;
 import ij.ImagePlus;
@@ -17,8 +15,8 @@ import uk.ac.bristol.star.cdf.CdfContent;
 import uk.ac.bristol.star.cdf.CdfReader;
 
 public class CDF_Reader_ implements PlugIn
-{
-    public void run(String paramString)
+{	
+	public void run(String paramString)
     {
         OpenDialog localOpenDialog = new OpenDialog("Open CDF...", paramString);
         String str1 = localOpenDialog.getDirectory();

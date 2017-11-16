@@ -1,17 +1,17 @@
 <?xml version="1.0" ?>
-<!-- Configuration of the Ant build system to generate a Jar file --> 
-<project name="CDF Reader" default="CreateJar">
+ <!-- Configuration of the Ant build system to generate a Jar file --> 
+  <project name="CDF Reader" default="CreateJar">
 	<property name="cdflib.dir"     value="c:/CDF_Distribution/cdf36_2-dist/lib"/>
 	<property name="classes.dir"     value="./target/classes"/>
 	<property name="jcdf.dir"     value="./dep"/>
 	
 	
   	<target name="CreateJar" description="Create Jar file">  		
-  		<unzip src="${cdflib.dir}/cdfjava.jar" dest="${classes.dir}">
+  		<!--unzip src="${cdflib.dir}/cdfjava.jar" dest="${classes.dir}">
   		  <patternset>
   		    <include name="gsfc/**/*.*"/>
   		  </patternset>
-  		</unzip>
+  		</unzip-->
 
   		<unzip src="${jcdf.dir}/jcdf.jar" dest="${classes.dir}">
   		  <patternset>
@@ -19,6 +19,12 @@
   		  </patternset>
   		</unzip>
 
+  		<unzip src="${jcdf.dir}/gson-2.8.1.jar" dest="${classes.dir}">
+  		  <patternset>
+  		    <include name="com/**/*.*"/>
+  		  </patternset>
+  		</unzip>
+  		
   		
   		<!--mkdir dir="${classes.dir}/win32-x86-64"/>  		
   		<copy file="${cdflib.dir}/cdfNativeLibrary.dll" todir="${classes.dir}/win32-x86-64"/>
@@ -27,5 +33,8 @@
   		<copy file="plugins.config" todir="${classes.dir}"/>  		
   		
         <jar jarfile="CDF_Reader_.jar" basedir="${classes.dir}" includes="**/*.*" />
+  		
+   		<!--copy file="CDF_Reader_.jar" todir="c:/Fiji.app/plugins"/-->
+  		
   	</target>
-</project>
+  </project>

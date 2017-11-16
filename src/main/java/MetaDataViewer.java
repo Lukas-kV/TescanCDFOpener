@@ -69,7 +69,7 @@ public class MetaDataViewer extends Panel
             
             double[] pos = m.get3DPositions(recordIndex);
             if (pos != null)
-                lblPosition.setText(String.format("Position X: %.6f mm Y: %.6f  Z: %.3f µm", pos[0], pos[1], pos[2]));
+                lblPosition.setText(String.format("Position X: %.6f mm Y: %.6f  Z: %.3f Âµm", pos[0], pos[1], pos[2]));
             else
                 lblPosition.setText("");
 
@@ -78,7 +78,7 @@ public class MetaDataViewer extends Panel
             {
                 lblCamera.setText(String.format("Exposure: %.0f ms", ms.camera.exposure));
 
-                lblObjective.setText(String.format("Lens: %.0fx/%.2f  FOV: %.2f x %.2f µm", ms.objectives.magnification,
+                lblObjective.setText(String.format("Lens: %.0fx/%.2f  FOV: %.2f x %.2f Âµm", ms.objectives.magnification,
                         ms.objectives.NA, ms.objectives.fov.x, ms.objectives.fov.y));
 
                 lblTuning.setText(String.format("Absolute Z: %.5f mm  Relative Z: %.5f mm", ms.objectives.AbsZ,

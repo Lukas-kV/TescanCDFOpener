@@ -22,5 +22,7 @@
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="D:/FIJI_src/TescanCDFOpener/dep/gson-2.8.1.jar"/>
+	<classpathentry kind="lib" path="D:/FIJI_src/TescanCDFOpener/dep/jcdf/jcdf.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

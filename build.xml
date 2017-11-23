@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
  <!-- Configuration of the Ant build system to generate a Jar file --> 
-  <project name="CDF Reader" default="CreateJar">
+  <project name="CDF_Reader" default="CreateJar">
 	<property name="cdflib.dir"     value="c:/CDF_Distribution/cdf36_2-dist/lib"/>
 	<property name="classes.dir"     value="./target/classes"/>
 	<property name="jcdf.dir"     value="./dep"/>
@@ -32,9 +32,9 @@
   		
   		<copy file="plugins.config" todir="${classes.dir}"/>  		
   		
-        <jar jarfile="CDF_Reader_.jar" basedir="${classes.dir}" includes="**/*.*" />
+        <jar jarfile="${ant.project.name}_.jar" basedir="${classes.dir}" includes="**/*.*" />
   		
-   		<!--copy file="CDF_Reader_.jar" todir="c:/Fiji.app/plugins"/-->
+   		<!--copy file="${ant.project.name}_.jar" todir="c:/Fiji.app/plugins"/-->
   		
   	</target>
   </project>

@@ -2,7 +2,7 @@ import javax.swing.JOptionPane;
 
 import ij.plugin.PlugIn;
 
-public final class About implements PlugIn
+public final class AboutTCDF implements PlugIn
 {
     public void run(String arg)
     {

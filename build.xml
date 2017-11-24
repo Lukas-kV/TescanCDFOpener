@@ -1,4 +1,5 @@
 <?xml version="1.0" ?>
+<!DOCTYPE target>
  <!-- Configuration of the Ant build system to generate a Jar file --> 
   <project name="CDF_Reader" default="CreateJar">
 	<property name="cdflib.dir"     value="c:/CDF_Distribution/cdf36_2-dist/lib"/>

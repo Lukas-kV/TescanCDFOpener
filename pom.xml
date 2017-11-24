@@ -5,6 +5,11 @@
   <version>0.0.1-SNAPSHOT</version>
   <name>CDF Reader</name>
   <description>Imagej plugin for TESCAN Q-PHASE CDF (NASA) reader plugin</description>
+<properties>
+   <maven.compiler.source>1.8</maven.compiler.source>
+   <maven.compiler.target>1.8</maven.compiler.target>
+</properties>
+  
   <dependencies>
   	<dependency>
   		<groupId>com.google.code.gson</groupId>

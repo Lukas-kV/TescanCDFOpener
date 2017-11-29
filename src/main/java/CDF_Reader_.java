@@ -1,3 +1,8 @@
+import java.awt.Font;
+import java.io.File;
+import java.io.IOException;
+import java.util.Vector;
+
 import ij.CompositeImage;
 import ij.IJ;
 import ij.ImagePlus;
@@ -6,11 +11,6 @@ import ij.gui.GenericDialog;
 import ij.io.OpenDialog;
 import ij.measure.Calibration;
 import ij.plugin.PlugIn;
-
-import java.awt.Font;
-import java.io.*;
-import java.util.Vector;
-
 import uk.ac.bristol.star.cdf.CdfContent;
 import uk.ac.bristol.star.cdf.CdfReader;
 
@@ -271,7 +271,8 @@ public class CDF_Reader_ implements PlugIn
             imp2.show();
 
             stack.setUpXYScrollBar(imp2);
-            stack.setUpMetaDataPanel(imp2);
+            stack.setUpMetaDataPanel(imp2);            
+            stack.getSliceLabel(1);
             
             WindowManager.setCurrentWindow(imp2.getWindow());
 

@@ -35,7 +35,7 @@
   		
         <jar jarfile="${ant.project.name}_.jar" basedir="${classes.dir}" includes="**/*.*" />
   		
-   		<!--copy file="${ant.project.name}_.jar" todir="c:/Fiji.app/plugins"/-->
+   		<copy file="${ant.project.name}_.jar" todir="c:/Fiji.app/plugins"/>
   		
   	</target>
   </project>

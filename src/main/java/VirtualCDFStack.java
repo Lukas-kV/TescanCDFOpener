@@ -1,8 +1,14 @@
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
+import java.io.IOException;
+import java.util.Vector;
+
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.LookUpTable;
+import ij.gui.ImageWindow;
 import ij.gui.ScrollbarWithLabel;
 import ij.gui.StackWindow;
 import ij.process.ByteProcessor;
@@ -11,11 +17,6 @@ import ij.process.ImageProcessor;
 import ij.process.ShortProcessor;
 import uk.ac.bristol.star.cdf.DataType;
 import uk.ac.bristol.star.cdf.Variable;
-
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
-import java.io.IOException;
-import java.util.Vector;
 
 
 /**
@@ -31,6 +32,7 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
     private ImagePlus imp;
     private MetaDataViewer mv;
     private DataType baseDataType;
+    private boolean specialMode; //! when only xy positions are opened
 
     /**
      * Creates a new, empty virtual stack.
@@ -49,7 +51,9 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
 
         IJ.showStatus("VirtualCDFStack " + nSlices);
         
-        baseDataType = getBaseDataType();        
+        baseDataType = getBaseDataType();
+        
+        specialMode = false;
     }
 
     public VirtualCDFStack(int width, int height, Vector<MetaData> _meta)
@@ -65,6 +69,15 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
         IJ.showStatus("VirtualCDFStack " + nSlices);
         
         baseDataType = getBaseDataType();
+        
+        specialMode = (nSlices == 1 &&  meta.firstElement().getXYCount() > 1);
+        
+        if(specialMode)
+        {
+        	useSelector = false;
+        	nSlices = meta.firstElement().getXYCount();
+        }
+        
     }
         
     public DataType getBaseDataType()
@@ -152,18 +165,19 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
         n--;
         if (n < 0 || n >= nSlices)
             return null;
-
+        
         int[] czt = getCZT(n);
         MetaData m = meta.elementAt(czt[0]);
         Variable var = m.getVar().Var();
         DataType dataType = var.getDataType();
-
-        //System.out.println("Stack: " + n + "  " +  m.getRecordIndex(czt[2], xyIndex, czt[1]));
+        
+        //System.out.println("Stack: " + n + "  " +  m.getRecordIndex(czt[2], xyIndex, czt[1]));        
+        //System.out.println("Stack: " + czt[0] + "  " + czt[1] + "  " + czt[2] ); 
         
         Object data = var.createRawValueArray();
         //System.out.println("Stack Data type: " + dataType.getName() + "  " + data.getClass().getComponentType());
         try {
-			var.readRawRecord(m.getRecordIndex(czt[2], xyIndex, czt[1]), data);
+            var.readRawRecord(m.getRecordIndex(czt[2], czt[3], czt[1]), data);
             //System.out.println("Stack Data: " + var.getName() + " type: " + dataType.getName() + "  " + data.getClass().getComponentType() + " var: " + var.getRecordVariance() );
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -237,13 +251,16 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
     /** Returns the file name of the Nth image. */
     public String getSliceLabel(int n)
     {
+        if(specialMode)
+        	n = 1;
+        
         n--;
-
+        
         String result = "";
-
+        
         int[] czt = getCZT(n);
         MetaData m = meta.elementAt(czt[0]);
-        int r = m.getRecordIndex(czt[2], xyIndex, czt[1]);
+        int r = m.getRecordIndex(czt[2], czt[3], czt[1]);
         result = m.getVar().getName();
         
         if(mv != null)
@@ -285,23 +302,40 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
     public void trim()
     {
     }
+    
+    public boolean isSpecialMode()
+    {
+    	return specialMode;
+    }
 
     private int[] getCZT(int n)
-    {
-        int[] czt = new int[3];
-        MetaData m = meta.firstElement();
+	{
+		int[] czt = new int[4];
+		
+    	if(specialMode)
+    	{
+    		czt[0] = 0;
+    		czt[1] = 0;
+    		czt[2] = 0;
+    		czt[3] = n;
+    		
+    		return czt;
+    	}
+    	    	
+		MetaData m = meta.firstElement();
 
-        int segment = m.getZCount() * meta.size();
-        czt[2] = n / segment; // T
+		czt[3] = xyIndex;
+				
+		int segment = m.getZCount() * meta.size();
+		czt[2] = n / segment; // T
 
-        int subSegment = n % segment;
-        czt[1] = subSegment / meta.size(); // Z
+		int subSegment = n % segment;
+		czt[1] = subSegment / meta.size(); // Z
 
-        czt[0] = subSegment % meta.size(); // C
+		czt[0] = subSegment % meta.size(); // C
 
-        return czt;
-    }
-    
+		return czt;
+	}    
     
     public void setUpXYScrollBar(ImagePlus im)
     {
@@ -360,7 +394,7 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
     
     public void setUpMetaDataPanel(ImagePlus im)
     {
-        StackWindow w = (StackWindow)im.getWindow();
+        ImageWindow w = im.getWindow();
         
         mv = new MetaDataViewer();
         mv.setFocusable(false);

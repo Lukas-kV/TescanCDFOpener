@@ -1,10 +1,11 @@
+import java.awt.Component;
 import java.awt.Label;
 import java.awt.Panel;
+
+import javax.swing.Box;
 import javax.swing.BoxLayout;
 
 import MetaStruct.MetaStruct;
-import java.awt.Component;
-import javax.swing.Box;
 
 public class MetaDataViewer extends Panel
 {

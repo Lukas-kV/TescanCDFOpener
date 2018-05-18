@@ -7,14 +7,14 @@ import ij.measure.Calibration;
 
 public class MetaData 
 {
-	private VariableExt var;
+	private VariableExtImg var;
 	private VariableExt time;
 	private VariableExt globalTimeSlots;
 	private VariableExt meta;
 	private VariableExt position;
 	private int xyCount, zCount, records, timeslots, width, height;	
 	
-	public MetaData(VariableExt _var, Vector<VariableExt> metaList)
+	public MetaData(VariableExtImg _var, Vector<VariableExt> metaList)
 	{		
 		VariableExt posHologram = null, metaHologram = null;
 		var = _var;
@@ -72,19 +72,29 @@ public class MetaData
 		
 		timeslots = records / (zCount * xyCount);
 		
-		int[] dimesions = var.getDimSizes();
-        width  = dimesions[1];
-        height = dimesions[0];
+        width  = var.getWidth();
+        height = var.getHeight();
 		
-		System.out.println(var.getName() + " (xyCount=" + xyCount + "  zCount=" + zCount + " records=" + records + " timeslots=" + timeslots +")");
+		System.out.println(var.getName() + " (xyCount=" + xyCount + "  zCount=" + zCount + " records=" + records + " timeslots=" + timeslots +") cl=" + var.isClippingPossible());
 		//System.out.println(getMetaString(0));
 		//System.out.println(getGlobalTime(0));
 	}
 
-	public VariableExt getVar()
+	public VariableExtImg getVar()
 	{
 		return var;
 	}
+	
+	public int getWidth()
+	{
+		return width;
+	}
+	
+	public int getHeight()
+	{
+		return height;
+	}
+	
 	
 	public String getGlobalTime(int timeslot, int xyIndex, int zIndex) 
 	{
@@ -167,7 +177,6 @@ public class MetaData
             c.setUnit("um");
             c.pixelWidth = m.objectives.fov.x / width;
             c.pixelHeight = m.objectives.fov.y / height;
-
             return c;
         }
 

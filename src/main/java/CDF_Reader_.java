@@ -16,6 +16,11 @@ import uk.ac.bristol.star.cdf.CdfReader;
 
 public class CDF_Reader_ implements PlugIn
 {	
+	static public String Clipped = "Clipped:";
+	static public String Hologram = "Hologram";
+	static public String CompensatedPhase = "Compensated phase";
+	
+	
 	public void run(String paramString)
     {
         OpenDialog localOpenDialog = new OpenDialog("Open CDF...", paramString);
@@ -35,7 +40,7 @@ public class CDF_Reader_ implements PlugIn
         	        	
         	VariableExt varList[] = VariableExt.Vars(content);
         	
-            Vector<VariableExt> images = new Vector<VariableExt>();
+            Vector<VariableExtImg> images = new Vector<VariableExtImg>();
             Vector<VariableExt> meta = new Vector<VariableExt>();
 
             GenericDialog gd = new GenericDialog("Variable Name Selection");
@@ -60,11 +65,14 @@ public class CDF_Reader_ implements PlugIn
                     int[] dimesions = var.getDimSizes();
 
                     if (j == 2 && dimesions[0] > 10 && dimesions[1] > 10)
-                        images.add(var);
+                        images.add(new VariableExtImg(var));
                     else
                         meta.add(var);
                 }
 
+                int hh = 0, hw = 0;
+                boolean  containsClippedFluo = false;
+                
                 if (images.size() > 0)
                 {
                     // gd.addMessage("Image data:", new Font("Hevletica", Font.BOLD, 12));
@@ -72,21 +80,29 @@ public class CDF_Reader_ implements PlugIn
                     String[] headings = { "Image data:" };
                     String[] labels = new String[images.size()];
                     boolean[] def = new boolean[images.size()];
+                    
+                    
+                    for (int i = 0; i < images.size(); ++i)
+                    {
+                        VariableExtImg var = images.get(i);
+                        if(var.getName().equals(Hologram))
+                        {
+                        	hh = var.getHeight();
+                        	hw = var.getWidth();
+                        }
+                        else                        	
+                        	if(var.getName().contains(Clipped) && var.getDataType().getName().equals("UINT2"))
+                        	{
+                        		containsClippedFluo = true;
+                        	}
+                        
+                    }
 
                     for (int i = 0; i < images.size(); ++i)
                     {
-                        VariableExt var = images.get(i);
-                        long j = var.getNumDims();
-                        int[] dimesions = var.getDimSizes();
-
-                        String name = var.getName() + " (";
-                        for (int k = 0; k < j; ++k)
-                        {
-                            if (k != 0)
-                                name += "x";
-                            name += dimesions[k];
-                        }
-                        name += ")                ";
+                        VariableExtImg var = images.get(i);
+                        
+                        String name = var.getName() + " (" + var.getWidth() + "x" + var.getHeight() + ")                ";
 
                         long rec = var.getNumWrittenRecords();
                         if (rec > 1)
@@ -100,9 +116,12 @@ public class CDF_Reader_ implements PlugIn
                         name += var.getDataType().getName();
                         //name += var.getSummary();
                         
+                        // is possible to clipp raw FLUO image
+                        var.setClippingPossible(!containsClippedFluo && !var.getName().equals(Hologram) && var.getDataType().getName().equals("UINT2")  
+                        		&& hh > 0 && hw > 0 && hh < var.getHeight() && hw < var.getWidth());
+                        	                    	                                            
                         labels[i] = name;                                              
-                        def[i] = (var.getName().equals("Compensated phase"));
-                        
+                        def[i] = (var.getName().equals(CompensatedPhase));
                     }
                     
 //                    if(images.size() > 1)
@@ -182,30 +201,36 @@ public class CDF_Reader_ implements PlugIn
             Vector<MetaData> m = new Vector<MetaData>();
             int width = 0, height = 0;
 
-            for (VariableExt var : images)
+            for (VariableExtImg var : images)
             {
 
                 if (!(gd.getNextBoolean()))
                     continue;
 
                 if (m.size() == 0)
-                {
-                    int[] dimesions = var.getDimSizes();
-                    width = dimesions[1];
-                    height = dimesions[0];
+                {                    
+                    width = var.getWidth();
+                    height = var.getHeight();
+                    var.setClippingPossible(false);
                     m.add(new MetaData(var, meta));
                 }
                 else
                 {
-                	int[] dimesions = var.getDimSizes();
-                    if (width == dimesions[1] || height == dimesions[0])
-                    {
+                	boolean equ = (width == var.getWidth() && height == var.getHeight());
+                	
+                    if ( equ || var.isClippingPossible())
+                    {       
+                    	if(equ)
+                    		var.setClippingPossible(false);
+                    	else
+                    		var.setClippingDimensions(width, height);
+                    		
                         m.add(new MetaData(var, meta));
                     }
                     else
                     {
                         IJ.error("Channel " + var.getName()
-                                + String.format(" (%dx%d)", dimesions[1], dimesions[0])
+                                + String.format(" (%dx%d)", var.getWidth(), var.getHeight())
                                 + " varies in size from first read channel " + m.firstElement().getVar().getName()
                                 + String.format(" (%dx%d)", width, height) + "it is going to be skipped");
                     }

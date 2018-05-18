@@ -11,8 +11,8 @@ import uk.ac.bristol.star.cdf.VariableAttribute;
 
 class VariableExt
 {
-	private Variable var;
-	private Map<String, VariableAttribute> attributes;
+	protected Variable var;
+	protected Map<String, VariableAttribute> attributes;
 
 	public VariableExt(Variable _var, Map<String, VariableAttribute> _attributes)
 	{
@@ -103,13 +103,12 @@ class VariableExt
 	{
 		return ((String)getRecordObject(r)).split("\0", 2)[0].trim();
 	}
-	
-	
+		
 	public DataType getDataType()
 	{
 		return var.getDataType();
 	}
-	
+				
 	static public int DataTypeIndex(DataType type)
 	{		
 	     switch (type.getName()) 
@@ -134,5 +133,4 @@ class VariableExt
 	     }
 	     return 1;
 	}
-		
 }

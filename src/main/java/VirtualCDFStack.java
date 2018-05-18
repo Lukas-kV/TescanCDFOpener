@@ -3,6 +3,7 @@ import java.awt.event.AdjustmentListener;
 import java.io.IOException;
 import java.util.Vector;
 
+import MetaStruct.FluoClipping;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -171,6 +172,7 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
         Variable var = m.getVar().Var();
         DataType dataType = var.getDataType();
         
+        //System.out.println("Clipping: " + m.getVar().isClippingPossible());
         //System.out.println("Stack: " + n + "  " +  m.getRecordIndex(czt[2], xyIndex, czt[1]));        
         //System.out.println("Stack: " + czt[0] + "  " + czt[1] + "  " + czt[2] ); 
         
@@ -184,30 +186,30 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
 			e.printStackTrace();
 			return null;
 		}
-
+        
         if (dataType == DataType.DOUBLE)
         {
-            return new FloatProcessor(getWidth(), getHeight(), (double[]) data);
+            return ClippImage(new FloatProcessor(m.getWidth(), m.getHeight(), (double[]) data), m, czt[2]);
         }
 
         if (dataType == DataType.FLOAT)
         {
-            return new FloatProcessor(getWidth(), getHeight(), (float[]) data);
+            return ClippImage(new FloatProcessor(m.getWidth(), m.getHeight(), (float[]) data), m, czt[2]);
         }
 
         if (dataType == DataType.UINT2)
         {
             if(VariableExt.DataTypeIndex(baseDataType) > VariableExt.DataTypeIndex(DataType.UINT2)) // should be just CDF_FLOAT or CDF_DOUBLE both converted to FloatProcessor
-                return new FloatProcessor(getWidth(), getHeight(), (int[]) data);
+                return ClippImage(new FloatProcessor(m.getWidth(), m.getHeight(), (int[]) data), m, czt[2]);
             else
             {
-                short[] b = new short[getWidth() * getHeight()];
+                short[] b = new short[m.getWidth() * m.getHeight()];
 
                 for (int i = 0; i < b.length; ++i)
                 {
                     b[i] = (short) ((int[]) data)[i];
                 }
-                return new ShortProcessor(getWidth(), getHeight(), b, LookUpTable.createGrayscaleColorModel(false));
+                return ClippImage(new ShortProcessor(m.getWidth(), m.getHeight(), b, LookUpTable.createGrayscaleColorModel(false)), m, czt[2]);
             }
         }
 
@@ -215,33 +217,53 @@ class VirtualCDFStack extends ImageStack implements AdjustmentListener
         {
             if (VariableExt.DataTypeIndex(baseDataType) > VariableExt.DataTypeIndex(DataType.UINT2))
             { // convert to FloatProcessor
-                float[] b = new float[getWidth() * getHeight()];
+                float[] b = new float[m.getWidth() * m.getHeight()];
                 for (int i = 0; i < b.length; ++i)
                 {
                     b[i] = (float) ((short[]) data)[i];
                 }                
-                return new FloatProcessor(getWidth(), getHeight(), b);
+                return ClippImage(new FloatProcessor(m.getWidth(), m.getHeight(), b), m, czt[2]);
             }
             else
                 if (baseDataType == DataType.UINT2)
                 { // convert to ShortProcessor
-                    return new ShortProcessor(getWidth(), getHeight(), (short[]) data, LookUpTable.createGrayscaleColorModel(false));
+                    return ClippImage(new ShortProcessor(m.getWidth(), m.getHeight(), (short[]) data, LookUpTable.createGrayscaleColorModel(false)), m, czt[2]);
                 }
                 else
                 { // ByteProcessor
-                    byte[] b = new byte[getWidth() * getHeight()];
+                    byte[] b = new byte[m.getWidth() * m.getHeight()];
 
                     for (int i = 0; i < b.length; ++i)
                     {
                         b[i] = (byte) ((short[]) data)[i];
                     }
 
-                    return new ByteProcessor(getWidth(), getHeight(), (byte[]) b);
+                    return ClippImage(new ByteProcessor(m.getWidth(), m.getHeight(), (byte[]) b), m , czt[2]);
                 }
         }
         return null;
     }
 
+    
+    public ImageProcessor ClippImage(ImageProcessor image, MetaData m, int timeslot)
+    {
+    	if(m.getVar().isClippingPossible())
+    	{
+    		FluoClipping f = m.getMetaStruct(timeslot, 0, 0).fluoClipping;
+    		VariableExtImg v = m.getVar();    		 
+    		//image.setInterpolationMethod(ImageProcessor.BICUBIC);
+    		image.scale(f.magnification, f.magnification);
+    		image.setRoi((int)((image.getWidth() - 2) * f.xOffset / 100. / f.magnification), (int)((image.getHeight() + 2) * f.yOffset / 100. / f.magnification), v.getClippedWidth(), v.getClippedHeigth());
+    		image = image.crop();
+    		return image;
+    	}
+    	else
+    	{
+    		return image;
+    	}    	
+    }
+    
+    
     /** Returns the number of slices in this stack. */
     public int getSize()
     {
